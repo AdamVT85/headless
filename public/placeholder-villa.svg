@@ -1,0 +1,22 @@
+<svg width="600" height="400" viewBox="0 0 600 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background - Clay color -->
+  <rect width="600" height="400" fill="#E8E4DD"/>
+
+  <!-- Simple villa illustration in Terracotta -->
+  <g transform="translate(200, 150)">
+    <!-- House body -->
+    <rect x="0" y="60" width="200" height="120" fill="#C06C54" opacity="0.3"/>
+    <!-- Roof -->
+    <path d="M -20 60 L 100 20 L 220 60 Z" fill="#5F6B4E" opacity="0.4"/>
+    <!-- Door -->
+    <rect x="80" y="120" width="40" height="60" fill="#5F6B4E" opacity="0.3"/>
+    <!-- Windows -->
+    <rect x="30" y="100" width="30" height="30" fill="#FFFFFF" opacity="0.5"/>
+    <rect x="140" y="100" width="30" height="30" fill="#FFFFFF" opacity="0.5"/>
+  </g>
+
+  <!-- Text -->
+  <text x="300" y="330" font-family="serif" font-size="18" fill="#A8A29E" text-anchor="middle">
+    Vintage Travel
+  </text>
+</svg>

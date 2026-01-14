@@ -1,0 +1,40 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/**
+ * VINTAGE TRAVEL - BRAND DESIGN SYSTEM
+ * "The art of the Mediterranean"
+ */
+
+:root {
+  /* Brand Colors - Light Mode */
+  --background: #E8E4DD; /* Clay - warm beige backgrounds */
+  --foreground: #5F6B4E; /* Olive - primary text */
+
+  /* Brand palette variables */
+  --terracotta: #C06C54;
+  --olive: #5F6B4E;
+  --clay: #E8E4DD;
+  --stone: #A8A29E;
+  --palm: #4A7A45;
+  --soleil: #D4A017;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Dark mode - use deeper tones from the palette */
+    --background: #262B1F; /* Olive 800 */
+    --foreground: #E8E4DD; /* Clay */
+  }
+}
+
+@layer base {
+  body {
+    @apply bg-clay text-olive;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-serif;
+  }
+}

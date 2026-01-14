@@ -1,0 +1,969 @@
+/**
+ * PHASE 56: DYNAMIC REGION LANDING PAGES
+ *
+ * Powers region-specific landing pages:
+ * /villas-in-spain/galicia, /villas-in-greece/kefalonia, etc.
+ */
+
+import { Metadata } from 'next';
+import { notFound } from 'next/navigation';
+import Image from 'next/image';
+import Link from 'next/link';
+import { getAllVillas } from '@/lib/crm-client';
+import { MockVilla } from '@/lib/mock-db';
+import { MapPin, Search, ShieldCheck, Users, BedDouble, Bath, ChevronDown, Star } from 'lucide-react';
+import { TownExplorer } from '@/components/llp/town-explorer';
+
+// ===== REGION CONFIGURATION =====
+
+interface RegionConfig {
+  name: string;
+  slug: string;
+  country: string;
+  countrySlug: string;
+  heroImage: string;
+  introTitle: string;
+  introSubtitle: string;
+  introText: string[];
+}
+
+// Helper to normalize strings for comparison
+const normalize = (str: string) => str?.toLowerCase().replace(/[^a-z0-9]/g, '') || '';
+
+// Region configurations - expandable
+const REGION_CONFIG: Record<string, Record<string, RegionConfig>> = {
+  spain: {
+    galicia: {
+      name: 'Galicia',
+      slug: 'galicia',
+      country: 'Spain',
+      countrySlug: 'spain',
+      heroImage: 'https://images.unsplash.com/photo-1539037116277-4db20889f2d4?w=1920&h=1080&fit=crop&q=80',
+      introTitle: 'Our beautiful Galicia villas',
+      introSubtitle: 'The Green Corner of Spain',
+      introText: [
+        'Discover the stunning green landscapes of Galicia, where Celtic heritage meets Atlantic beauty.',
+        'From the pilgrimage city of Santiago de Compostela to the wild Rías Baixas coastline, Galicia offers a Spain unlike any other.',
+        'Our handpicked villas provide the perfect base to explore this lush, unspoiled region.',
+      ],
+    },
+    'costa-brava': {
+      name: 'Costa Brava',
+      slug: 'costa-brava',
+      country: 'Spain',
+      countrySlug: 'spain',
+      heroImage: 'https://images.unsplash.com/photo-1512413914633-b5043f4041ea?w=1920&h=1080&fit=crop&q=80',
+      introTitle: 'Our Costa Brava villas',
+      introSubtitle: 'The Wild Coast',
+      introText: [
+        'The Costa Brava, or "Wild Coast," is famous for its rugged beauty, hidden coves, and crystal-clear waters.',
+        'Medieval villages like Pals and Peratallada sit alongside glamorous beach resorts and world-class restaurants.',
+        'Our villas offer the perfect blend of relaxation and cultural discovery.',
+      ],
+    },
+    andalucia: {
+      name: 'Andalucia',
+      slug: 'andalucia',
+      country: 'Spain',
+      countrySlug: 'spain',
+      heroImage: 'https://images.unsplash.com/photo-1559563362-c667ba5f5480?w=1920&h=1080&fit=crop&q=80',
+      introTitle: 'Our Andalucia villas',
+      introSubtitle: 'The Soul of Spain',
+      introText: [
+        'Andalucia is the Spain of your dreams - flamenco, tapas, and sun-drenched landscapes.',
+        'Visit the Alhambra, explore whitewashed villages, and enjoy the passionate culture of southern Spain.',
+        'Our villas range from countryside retreats to coastal escapes.',
+      ],
+    },
+    catalunya: {
+      name: 'Catalunya',
+      slug: 'catalunya',
+      country: 'Spain',
+      countrySlug: 'spain',
+      heroImage: 'https://images.unsplash.com/photo-1583422409516-2895a77efded?w=1920&h=1080&fit=crop&q=80',
+      introTitle: 'Our Catalunya villas',
+      introSubtitle: 'Culture & Coast',
+      introText: [
+        'Catalunya offers a unique blend of distinct culture, stunning architecture, and diverse landscapes.',
+        'From the cosmopolitan energy of Barcelona to the peaceful Pyrenean foothills, there\'s something for everyone.',
+        'Our villas capture the authentic Catalan lifestyle.',
+      ],
+    },
+  },
+  greece: {
+    kefalonia: {
+      name: 'Kefalonia',
+      slug: 'kefalonia',
+      country: 'Greece',
+      countrySlug: 'greece',
+      heroImage: 'https://images.unsplash.com/photo-1601581875039-e899893d520c?w=1920&h=1080&fit=crop&q=80',
+      introTitle: 'Our Kefalonia villas',
+      introSubtitle: 'Ionian Paradise',
+      introText: [
+        'Kefalonia is the largest of the Ionian Islands, featuring dramatic landscapes from Mount Ainos to the famous Myrtos Beach.',
+        'Explore underground lakes, swim in turquoise waters, and experience authentic Greek island life.',
+        'Our villas offer stunning sea views and easy access to the island\'s best beaches.',
+      ],
+    },
+    corfu: {
+      name: 'Corfu',
+      slug: 'corfu',
+      country: 'Greece',
+      countrySlug: 'greece',
+      heroImage: 'https://images.unsplash.com/photo-1586861635167-e5223aadc9fe?w=1920&h=1080&fit=crop&q=80',
+      introTitle: 'Our Corfu villas',
+      introSubtitle: 'The Emerald Isle',
+      introText: [
+        'Corfu combines Venetian elegance with Greek charm, creating a unique island atmosphere.',
+        'Lush green landscapes, beautiful beaches, and a rich cultural heritage await.',
+        'Our villas range from traditional stone houses to modern luxury retreats.',
+      ],
+    },
+    crete: {
+      name: 'Crete',
+      slug: 'crete',
+      country: 'Greece',
+      countrySlug: 'greece',
+      heroImage: 'https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=1920&h=1080&fit=crop&q=80',
+      introTitle: 'Our Crete villas',
+      introSubtitle: 'Birthplace of Civilization',
+      introText: [
+        'Greece\'s largest island offers incredible diversity - ancient ruins, dramatic gorges, and some of Europe\'s finest beaches.',
+        'Discover the Palace of Knossos, hike Samaria Gorge, and sample authentic Cretan cuisine.',
+        'Our villas provide the perfect base for island exploration.',
+      ],
+    },
+    lefkada: {
+      name: 'Lefkada',
+      slug: 'lefkada',
+      country: 'Greece',
+      countrySlug: 'greece',
+      heroImage: 'https://images.unsplash.com/photo-1533105079780-92b9be482077?w=1920&h=1080&fit=crop&q=80',
+      introTitle: 'Our Lefkada villas',
+      introSubtitle: 'World-Class Beaches',
+      introText: [
+        'Connected to the mainland by a bridge, Lefkada offers easy access to some of Greece\'s most stunning beaches.',
+        'Porto Katsiki and Egremni beaches regularly feature in world\'s best beach lists.',
+        'Our villas put you close to the action while offering peaceful retreats.',
+      ],
+    },
+    parga: {
+      name: 'Parga',
+      slug: 'parga',
+      country: 'Greece',
+      countrySlug: 'greece',
+      heroImage: 'https://images.unsplash.com/photo-1504512485720-7d83a16ee930?w=1920&h=1080&fit=crop&q=80',
+      introTitle: 'Our Parga villas',
+      introSubtitle: 'Venetian Charm',
+      introText: [
+        'This colorful coastal town on the mainland offers the island atmosphere with mainland accessibility.',
+        'Wander through Venetian streets, swim from sandy beaches, and enjoy spectacular sunsets.',
+        'Our hillside villas offer stunning views over the bay.',
+      ],
+    },
+    zakynthos: {
+      name: 'Zakynthos',
+      slug: 'zakynthos',
+      country: 'Greece',
+      countrySlug: 'greece',
+      heroImage: 'https://images.unsplash.com/photo-1530841377377-3ff06c0ca713?w=1920&h=1080&fit=crop&q=80',
+      introTitle: 'Our Zakynthos villas',
+      introSubtitle: 'Natural Beauty',
+      introText: [
+        'Home to the iconic Shipwreck Beach, Zakynthos combines stunning natural beauty with vibrant nightlife.',
+        'Swim with sea turtles, explore the Blue Caves, or simply relax on golden beaches.',
+        'Our villas cater to every taste, from peaceful retreats to lively resorts.',
+      ],
+    },
+    peloponnese: {
+      name: 'Peloponnese',
+      slug: 'peloponnese',
+      country: 'Greece',
+      countrySlug: 'greece',
+      heroImage: 'https://images.unsplash.com/photo-1516483638261-f4dbaf036963?w=1920&h=1080&fit=crop&q=80',
+      introTitle: 'Our Peloponnese villas',
+      introSubtitle: 'Cradle of Civilization',
+      introText: [
+        'The Peloponnese peninsula is the cradle of ancient Greek civilization.',
+        'Visit ancient Olympia, explore the Byzantine city of Mystras, or relax on the beaches of the Mani peninsula.',
+        'Our villas offer a gateway to Greece\'s rich history.',
+      ],
+    },
+    meganisi: {
+      name: 'Meganisi',
+      slug: 'meganisi',
+      country: 'Greece',
+      countrySlug: 'greece',
+      heroImage: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1920&h=1080&fit=crop&q=80',
+      introTitle: 'Our Meganisi villas',
+      introSubtitle: 'Ultimate Escape',
+      introText: [
+        'This tiny island offers the ultimate escape - just three villages, pristine waters, and complete tranquility.',
+        'Perfect for those seeking peace and authentic Greek charm away from the tourist crowds.',
+        'Our villas offer a genuine off-the-beaten-path experience.',
+      ],
+    },
+  },
+  italy: {
+    tuscany: {
+      name: 'Tuscany',
+      slug: 'tuscany',
+      country: 'Italy',
+      countrySlug: 'italy',
+      heroImage: 'https://images.unsplash.com/photo-1534445867742-43195f401b6c?w=1920&h=1080&fit=crop&q=80',
+      introTitle: 'Our Tuscan villas',
+      introSubtitle: 'Rolling Hills & Renaissance',
+      introText: [
+        'Tuscany is the quintessential Italian landscape - rolling hills, cypress-lined roads, and world-famous wines.',
+        'Visit Florence\'s galleries, explore medieval hill towns, and enjoy the view with a glass of Chianti.',
+        'Our villas capture the essence of la dolce vita.',
+      ],
+    },
+    umbria: {
+      name: 'Umbria',
+      slug: 'umbria',
+      country: 'Italy',
+      countrySlug: 'italy',
+      heroImage: 'https://images.unsplash.com/photo-1600019248002-f4e630104dc9?w=1920&h=1080&fit=crop&q=80',
+      introTitle: 'Our Umbria villas',
+      introSubtitle: 'The Green Heart of Italy',
+      introText: [
+        'Umbria offers a more authentic, less touristy alternative to neighboring Tuscany.',
+        'Discover Assisi\'s spiritual heritage, sample black truffles, and enjoy the peaceful countryside.',
+        'Our secluded villas provide the ultimate Italian escape.',
+      ],
+    },
+    puglia: {
+      name: 'Puglia',
+      slug: 'puglia',
+      country: 'Italy',
+      countrySlug: 'italy',
+      heroImage: 'https://images.unsplash.com/photo-1596097561109-2eeff92a7a20?w=1920&h=1080&fit=crop&q=80',
+      introTitle: 'Our Puglia villas',
+      introSubtitle: 'Italy\'s Best-Kept Secret',
+      introText: [
+        'The heel of Italy\'s boot is home to whitewashed towns, ancient olive groves, and stunning beaches.',
+        'Stay in a traditional masseria or modern villa and discover why Puglia is Italy\'s hottest destination.',
+        'Our villas offer authentic southern Italian hospitality.',
+      ],
+    },
+    lazio: {
+      name: 'Lazio',
+      slug: 'lazio',
+      country: 'Italy',
+      countrySlug: 'italy',
+      heroImage: 'https://images.unsplash.com/photo-1552832230-c0197dd311b5?w=1920&h=1080&fit=crop&q=80',
+      introTitle: 'Our Lazio villas',
+      introSubtitle: 'Gateway to Rome',
+      introText: [
+        'Home to Rome, Lazio offers the perfect blend of ancient history and stunning countryside.',
+        'Explore Roman ruins, relax by volcanic lakes, or venture to the beautiful coast.',
+        'Our villas put the Eternal City within easy reach.',
+      ],
+    },
+  },
+  france: {
+    provence: {
+      name: 'Provence',
+      slug: 'provence',
+      country: 'France',
+      countrySlug: 'france',
+      heroImage: 'https://images.unsplash.com/photo-1499856871958-5b9627545d1a?w=1920&h=1080&fit=crop&q=80',
+      introTitle: 'Our Provence villas',
+      introSubtitle: 'Lavender & Light',
+      introText: [
+        'Lavender fields, hilltop villages, and world-famous light have inspired artists for generations.',
+        'Visit local markets, sample excellent wines, and embrace the slow pace of Provencal life.',
+        'Our countryside villas offer the authentic French experience.',
+      ],
+    },
+    'cote-dazur': {
+      name: "Cote d'Azur",
+      slug: 'cote-dazur',
+      country: 'France',
+      countrySlug: 'france',
+      heroImage: 'https://images.unsplash.com/photo-1533929736458-ca588d08c8be?w=1920&h=1080&fit=crop&q=80',
+      introTitle: "Our Cote d'Azur villas",
+      introSubtitle: 'French Riviera Glamour',
+      introText: [
+        'The French Riviera needs no introduction - glamorous beaches, chic towns, and year-round sunshine.',
+        'From Nice to Saint-Tropez, experience Riviera elegance from your private retreat.',
+        'Our villas combine luxury with the best Mediterranean lifestyle.',
+      ],
+    },
+    languedoc: {
+      name: 'Languedoc',
+      slug: 'languedoc',
+      country: 'France',
+      countrySlug: 'france',
+      heroImage: 'https://images.unsplash.com/photo-1558618047-f4b0d1b3c19e?w=1920&h=1080&fit=crop&q=80',
+      introTitle: 'Our Languedoc villas',
+      introSubtitle: 'Undiscovered France',
+      introText: [
+        'A less discovered region offering Roman heritage, medieval Cathar castles, and unspoiled beaches.',
+        'Explore Carcassonne\'s fortress, taste excellent wines, and enjoy the authentic French south.',
+        'Our villas offer exceptional value in stunning surroundings.',
+      ],
+    },
+    'south-west-france': {
+      name: 'South West France',
+      slug: 'south-west-france',
+      country: 'France',
+      countrySlug: 'france',
+      heroImage: 'https://images.unsplash.com/photo-1560717789-0ac7c58ac90a?w=1920&h=1080&fit=crop&q=80',
+      introTitle: 'Our South West France villas',
+      introSubtitle: 'Gastronomy & History',
+      introText: [
+        'From the Dordogne\'s prehistoric caves to Bordeaux\'s legendary vineyards, this region offers endless discovery.',
+        'Explore castles, kayak down rivers, and indulge in duck confit and foie gras.',
+        'Our villas provide the perfect base for culinary adventures.',
+      ],
+    },
+  },
+  portugal: {
+    algarve: {
+      name: 'Algarve',
+      slug: 'algarve',
+      country: 'Portugal',
+      countrySlug: 'portugal',
+      heroImage: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=1920&h=1080&fit=crop&q=80',
+      introTitle: 'Our Algarve villas',
+      introSubtitle: 'Sun-Drenched Paradise',
+      introText: [
+        'Europe\'s sunniest region offers golden beaches, dramatic cliffs, and world-class golf courses.',
+        'From family-friendly Albufeira to sophisticated Quinta do Lago, the Algarve caters to every taste.',
+        'Our villas range from beachfront retreats to countryside escapes.',
+      ],
+    },
+    'costa-verde-minho': {
+      name: 'Costa Verde & Minho',
+      slug: 'costa-verde-minho',
+      country: 'Portugal',
+      countrySlug: 'portugal',
+      heroImage: 'https://images.unsplash.com/photo-1555881400-74d7acaacd8b?w=1920&h=1080&fit=crop&q=80',
+      introTitle: 'Our Costa Verde & Minho villas',
+      introSubtitle: 'Green Portugal',
+      introText: [
+        'Portugal\'s green north offers lush landscapes, historic towns, and the birthplace of the nation.',
+        'Explore Guimaraes and Braga, taste Vinho Verde, and discover a Portugal far from the crowds.',
+        'Our villas showcase authentic Portuguese hospitality.',
+      ],
+    },
+  },
+  croatia: {
+    dubrovnik: {
+      name: 'Dubrovnik',
+      slug: 'dubrovnik',
+      country: 'Croatia',
+      countrySlug: 'croatia',
+      heroImage: 'https://images.unsplash.com/photo-1555990538-1bf27e9b7558?w=1920&h=1080&fit=crop&q=80',
+      introTitle: 'Our Dubrovnik villas',
+      introSubtitle: 'Pearl of the Adriatic',
+      introText: [
+        'Dubrovnik\'s ancient walls and stunning coastal setting need no introduction.',
+        'Explore the UNESCO World Heritage city, island-hop to nearby Elaphiti Islands, or swim in crystal-clear waters.',
+        'Our luxury villas offer the perfect base for your Adriatic adventure.',
+      ],
+    },
+    istria: {
+      name: 'Istria',
+      slug: 'istria',
+      country: 'Croatia',
+      countrySlug: 'croatia',
+      heroImage: 'https://images.unsplash.com/photo-1596097557847-1d49e8e327e6?w=1920&h=1080&fit=crop&q=80',
+      introTitle: 'Our Istria villas',
+      introSubtitle: 'The New Tuscany',
+      introText: [
+        'Often called "the new Tuscany," Istria combines Italian influence with Croatian authenticity.',
+        'Rolling hills, truffle forests, and charming hilltop towns await.',
+        'Our villas offer world-class olive oil, wine, and Mediterranean living.',
+      ],
+    },
+  },
+  balearics: {
+    mallorca: {
+      name: 'Mallorca',
+      slug: 'mallorca',
+      country: 'Balearics',
+      countrySlug: 'balearics',
+      heroImage: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1920&h=1080&fit=crop&q=80',
+      introTitle: 'Our Mallorca villas',
+      introSubtitle: 'Mediterranean Diversity',
+      introText: [
+        'The largest Balearic island offers incredible diversity - dramatic mountains, pristine beaches, and charming villages.',
+        'Explore Palma\'s Gothic cathedral, cycle through almond orchards, or relax by your private pool.',
+        'Our villas capture the best of Mallorcan living.',
+      ],
+    },
+    menorca: {
+      name: 'Menorca',
+      slug: 'menorca',
+      country: 'Balearics',
+      countrySlug: 'balearics',
+      heroImage: 'https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=1920&h=1080&fit=crop&q=80',
+      introTitle: 'Our Menorca villas',
+      introSubtitle: 'UNESCO Biosphere Reserve',
+      introText: [
+        'Menorca is the quieter sister island offering unspoiled beaches, prehistoric monuments, and authentic charm.',
+        'A UNESCO Biosphere Reserve, perfect for families and nature lovers.',
+        'Our villas provide a peaceful retreat from the modern world.',
+      ],
+    },
+  },
+  turkey: {
+    'lycian-coast': {
+      name: 'Lycian Coast',
+      slug: 'lycian-coast',
+      country: 'Turkey',
+      countrySlug: 'turkey',
+      heroImage: 'https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?w=1920&h=1080&fit=crop&q=80',
+      introTitle: 'Our Lycian Coast villas',
+      introSubtitle: 'Turquoise Paradise',
+      introText: [
+        'One of the world\'s most beautiful coastlines, dotted with ancient ruins and pine-clad mountains.',
+        'Sail on a traditional gulet, explore ancient sites, or paraglide over Oludeniz.',
+        'Our villas offer adventure and relaxation in equal measure.',
+      ],
+    },
+  },
+};
+
+// ===== METADATA =====
+
+interface PageProps {
+  params: Promise<{ country: string; region: string }>;
+}
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { country, region } = await params;
+  const countryConfig = REGION_CONFIG[country];
+  const config = countryConfig?.[region];
+
+  if (!config) {
+    return { title: 'Not Found' };
+  }
+
+  return {
+    title: `Holiday Villas in ${config.name}, ${config.country} | Vintage Travel`,
+    description: `Discover our handpicked collection of luxury holiday villas in ${config.name}, ${config.country}. Personally inspected properties with local support.`,
+  };
+}
+
+export async function generateStaticParams() {
+  const params: { country: string; region: string }[] = [];
+
+  for (const [country, regions] of Object.entries(REGION_CONFIG)) {
+    for (const region of Object.keys(regions)) {
+      params.push({ country, region });
+    }
+  }
+
+  return params;
+}
+
+// ===== PAGE COMPONENT =====
+
+export default async function RegionLandingPage({ params }: PageProps) {
+  const { country, region } = await params;
+  const countryConfig = REGION_CONFIG[country];
+  const config = countryConfig?.[region];
+
+  if (!config) {
+    notFound();
+  }
+
+  // Fetch villas and filter by region
+  const allVillas = await getAllVillas();
+
+  // Filter villas by region (case-insensitive, normalized comparison)
+  const regionVillas = allVillas.filter((villa) =>
+    normalize(villa.region) === normalize(config.name)
+  );
+
+  // Extract unique towns from the villas
+  const towns = Array.from(
+    new Set(regionVillas.map((v) => v.town).filter((t): t is string => Boolean(t)))
+  ).sort();
+
+  // Get first 4 villas for featured section
+  const featuredVillas = regionVillas.slice(0, 4);
+
+  return (
+    <div className="min-h-screen bg-[#F3F0E9]">
+      {/* Hero Section */}
+      <HeroSection config={config} />
+
+      {/* Intro Section */}
+      <IntroSection config={config} />
+
+      {/* Value Props */}
+      <ValuePropsSection />
+
+      {/* Town Explorer */}
+      {towns.length > 0 && (
+        <TownExplorer
+          region={config.name}
+          towns={towns}
+        />
+      )}
+
+      {/* Featured Villas */}
+      <FeaturedVillasSection villas={featuredVillas} regionName={config.name} />
+
+      {/* Categories */}
+      <CategoriesSection regionName={config.name} countryName={config.country} />
+
+      {/* Testimonials */}
+      <TestimonialsSection />
+
+      {/* Newsletter */}
+      <NewsletterSection />
+    </div>
+  );
+}
+
+// ===== HERO SECTION =====
+
+function HeroSection({ config }: { config: RegionConfig }) {
+  return (
+    <div className="relative w-full h-[500px] md:h-[600px]">
+      <Image
+        src={config.heroImage}
+        alt={`${config.name} landscape`}
+        fill
+        className="object-cover"
+        priority
+      />
+
+      <div className="absolute inset-0 bg-black/30 flex flex-col justify-center items-center">
+        <h1 className="text-white text-4xl md:text-6xl lg:text-7xl font-serif tracking-wide drop-shadow-lg text-center px-4">
+          Holiday Villas in {config.name}
+        </h1>
+      </div>
+
+      {/* Search Bar */}
+      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 w-[90%] md:w-[800px] bg-white shadow-xl flex flex-col md:flex-row">
+        <div className="flex-1 p-4 border-b md:border-b-0 md:border-r border-gray-200">
+          <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-1">Location</label>
+          <div className="flex justify-between items-center">
+            <span className="text-gray-700 font-serif">{config.name}</span>
+            <ChevronDown size={14} className="text-gray-400" />
+          </div>
+        </div>
+        <div className="flex-1 p-4 border-b md:border-b-0 md:border-r border-gray-200">
+          <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-1">Dates</label>
+          <div className="flex justify-between items-center">
+            <span className="text-gray-700 font-serif">Select date</span>
+            <ChevronDown size={14} className="text-gray-400" />
+          </div>
+        </div>
+        <div className="flex-1 p-4">
+          <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-1">Guests</label>
+          <div className="flex justify-between items-center">
+            <span className="text-gray-700 font-serif">Any</span>
+            <ChevronDown size={14} className="text-gray-400" />
+          </div>
+        </div>
+        <Link
+          href={`/search?region=${encodeURIComponent(config.name)}`}
+          className="bg-[#3A443C] text-white px-8 py-4 font-serif uppercase tracking-widest text-sm hover:bg-[#2F3B34] transition-colors flex items-center justify-center gap-2"
+        >
+          Search
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+// ===== INTRO SECTION =====
+
+function IntroSection({ config }: { config: RegionConfig }) {
+  return (
+    <section className="bg-[#F9F7F2] py-16 px-6 md:px-20">
+      <div className="max-w-6xl mx-auto">
+        {/* Breadcrumbs */}
+        <div className="text-xs uppercase tracking-widest text-gray-500 mb-8">
+          <Link href="/" className="hover:text-gray-700">Home</Link>
+          {' > '}
+          <Link href={`/villas-in-${config.countrySlug}`} className="hover:text-gray-700">
+            Villas in {config.country}
+          </Link>
+          {' > '}
+          <span className="text-black">Villas in {config.name}</span>
+        </div>
+
+        <div className="flex flex-col lg:flex-row gap-12 items-start">
+          {/* Text Content */}
+          <div className="lg:w-2/3 space-y-6">
+            <h2 className="text-3xl md:text-4xl font-serif text-[#3A443C]">{config.introTitle}</h2>
+            <p className="font-serif italic text-lg text-gray-600">{config.introSubtitle}</p>
+
+            <div className="space-y-4 text-sm text-gray-600 leading-relaxed">
+              {config.introText.map((text, index) => (
+                <p key={index}>{text}</p>
+              ))}
+            </div>
+          </div>
+
+          {/* Stats/Info Box */}
+          <div className="lg:w-1/3 bg-white p-8 shadow-sm">
+            <h3 className="text-lg font-serif text-[#3A443C] mb-4">Quick Facts</h3>
+            <ul className="space-y-3 text-sm text-gray-600">
+              <li className="flex items-center gap-2">
+                <MapPin size={16} className="text-[#3A443C]" />
+                <span>{config.name}, {config.country}</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <ShieldCheck size={16} className="text-[#3A443C]" />
+                <span>ABTA Protected Holidays</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <Search size={16} className="text-[#3A443C]" />
+                <span>All Villas Personally Inspected</span>
+              </li>
+            </ul>
+            <div className="mt-6 pt-6 border-t border-gray-200">
+              <Link
+                href={`/search?region=${encodeURIComponent(config.name)}`}
+                className="text-[#3A443C] text-sm font-medium hover:underline"
+              >
+                View all villas in {config.name} →
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ===== VALUE PROPS SECTION =====
+
+function ValuePropsSection() {
+  const props = [
+    {
+      icon: MapPin,
+      title: 'Reps in location',
+      description: 'Our local representatives are on hand throughout your stay to ensure everything runs smoothly.',
+    },
+    {
+      icon: Search,
+      title: 'Personally inspected',
+      description: 'Every villa in our collection has been personally inspected by our team.',
+    },
+    {
+      icon: ShieldCheck,
+      title: 'ABTA protected',
+      description: 'Book with confidence knowing your holiday is fully protected.',
+    },
+  ];
+
+  return (
+    <section className="bg-[#F9F7F2] pb-16 px-6 md:px-20 border-b border-gray-200">
+      <div className="text-center mb-10">
+        <h3 className="text-2xl font-serif text-[#3A443C]">Why book with Vintage?</h3>
+      </div>
+
+      <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
+        {props.map((prop, index) => (
+          <div key={index} className="flex flex-col items-center px-4">
+            <div className="mb-4 p-3 border-2 border-gray-800 rounded-full">
+              <prop.icon size={28} className="text-gray-800" strokeWidth={1.5} />
+            </div>
+            <h4 className="text-lg font-serif mb-2">{prop.title}</h4>
+            <p className="text-sm text-gray-500">{prop.description}</p>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+// ===== FEATURED VILLAS SECTION =====
+
+function FeaturedVillasSection({ villas, regionName }: { villas: MockVilla[]; regionName: string }) {
+  if (villas.length === 0) {
+    return (
+      <section className="bg-[#F3F0E9] py-16 px-6 md:px-20">
+        <div className="max-w-5xl mx-auto text-center">
+          <h2 className="text-3xl font-serif text-[#3A443C] mb-6">Featured Villas in {regionName}</h2>
+          <p className="text-gray-600 mb-8">
+            We&apos;re currently updating our villa collection for {regionName}. Please check back soon.
+          </p>
+          <Link
+            href="/search"
+            className="bg-[#3A443C] text-white px-8 py-3 font-serif uppercase tracking-widest text-xs hover:bg-black transition-colors inline-block"
+          >
+            Browse All Villas
+          </Link>
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <section className="bg-[#F3F0E9] py-16 px-6 md:px-20">
+      <div className="max-w-5xl mx-auto">
+        <h2 className="text-3xl font-serif text-[#3A443C] mb-8 text-center">Featured Villas in {regionName}</h2>
+
+        {villas.map((villa) => (
+          <VillaCard key={villa.id} villa={villa} />
+        ))}
+
+        <div className="mt-8 text-center">
+          <Link
+            href={`/search?region=${encodeURIComponent(regionName)}`}
+            className="bg-[#3A443C] text-white px-8 py-3 font-serif uppercase tracking-widest text-xs hover:bg-black transition-colors inline-block"
+          >
+            View All Villas in {regionName}
+          </Link>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ===== VILLA CARD COMPONENT =====
+
+function VillaCard({ villa }: { villa: MockVilla }) {
+  const tags = villa.amenities?.slice(0, 3) || [];
+
+  return (
+    <div className="bg-white shadow-sm flex flex-col md:flex-row mb-8 min-h-[280px]">
+      {/* Image Side */}
+      <div className="relative w-full md:w-5/12 h-56 md:h-auto overflow-hidden group">
+        <Image
+          src={villa.heroImageUrl || 'https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=800&h=500&fit=crop&q=80'}
+          alt={villa.title}
+          fill
+          className="object-cover transition-transform duration-700 group-hover:scale-105"
+        />
+      </div>
+
+      {/* Content Side */}
+      <div className="w-full md:w-7/12 p-6 flex flex-col relative">
+        {/* Tags */}
+        {tags.length > 0 && (
+          <div className="flex flex-wrap gap-2 mb-3">
+            {tags.map((tag) => (
+              <span
+                key={tag}
+                className="border border-gray-400 rounded-full px-3 py-1 text-[10px] uppercase tracking-wide text-gray-600"
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
+        )}
+
+        <div className="flex justify-between items-start">
+          <div>
+            <Link href={`/villas/${villa.slug}`}>
+              <h3 className="text-xl font-serif text-[#3A443C] mb-1 hover:underline">{villa.title}</h3>
+            </Link>
+            <p className="text-xs text-gray-500 mb-3">
+              {villa.town && `${villa.town}, `}{villa.region}, {villa.country}
+            </p>
+          </div>
+          {/* Price - Desktop */}
+          <div className="hidden md:block text-right">
+            <p className="text-[10px] uppercase tracking-widest text-gray-500">From</p>
+            <p className="text-2xl font-serif text-[#3A443C]">
+              {villa.pricePerWeek ? `£${villa.pricePerWeek.toLocaleString()}` : 'POA'}
+            </p>
+            <p className="text-[10px] uppercase tracking-widest text-gray-500">Per Week</p>
+          </div>
+        </div>
+
+        <p className="text-sm text-gray-600 leading-relaxed mb-4 line-clamp-2">
+          {villa.description?.replace(/<[^>]*>/g, '').substring(0, 150)}...
+        </p>
+
+        <div className="mt-auto">
+          <div className="flex gap-5 text-gray-700">
+            <div className="flex items-center gap-2">
+              <Users size={16} strokeWidth={1.5} />
+              <span className="text-xs">Sleeps {villa.maxGuests}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <BedDouble size={16} strokeWidth={1.5} />
+              <span className="text-xs">{villa.bedrooms} Beds</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Bath size={16} strokeWidth={1.5} />
+              <span className="text-xs">{villa.bathrooms} Baths</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Desktop Button */}
+        <div className="hidden md:block absolute bottom-6 right-6">
+          <Link
+            href={`/villas/${villa.slug}`}
+            className="bg-[#3A443C] text-white px-6 py-2 font-serif uppercase tracking-widest text-[10px] hover:bg-black transition-colors"
+          >
+            View Villa
+          </Link>
+        </div>
+
+        {/* Mobile Price & Action */}
+        <div className="md:hidden mt-4 pt-4 border-t border-gray-100 flex justify-between items-center">
+          <div>
+            <p className="text-lg font-serif text-[#3A443C]">
+              {villa.pricePerWeek ? `£${villa.pricePerWeek.toLocaleString()}` : 'POA'}
+            </p>
+            <p className="text-[10px] text-gray-500">Per Week</p>
+          </div>
+          <Link
+            href={`/villas/${villa.slug}`}
+            className="bg-[#3A443C] text-white px-5 py-2 font-serif uppercase tracking-widest text-[10px] hover:bg-black transition-colors"
+          >
+            View Villa
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ===== CATEGORIES SECTION =====
+
+const CATEGORIES = [
+  { id: 1, title: 'Family-friendly villas', image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=600&h=400&fit=crop&q=80', href: '/search?amenity=family-friendly' },
+  { id: 2, title: 'Villas for couples', image: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=600&h=400&fit=crop&q=80', href: '/search?guests=2' },
+  { id: 3, title: 'Large villas', image: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=600&h=400&fit=crop&q=80', href: '/search?bedrooms=5' },
+];
+
+function CategoriesSection({ regionName, countryName }: { regionName: string; countryName: string }) {
+  return (
+    <section className="bg-[#F3F0E9] py-16 px-6 md:px-20">
+      <div className="text-center mb-12">
+        <h4 className="text-lg font-serif text-gray-600 mb-2">Villas in {regionName}</h4>
+        <h2 className="text-3xl md:text-4xl font-serif text-[#3A443C] italic">
+          What are you looking for?
+        </h2>
+      </div>
+
+      <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
+        {CATEGORIES.map((cat) => (
+          <Link
+            key={cat.id}
+            href={`${cat.href}&region=${encodeURIComponent(regionName)}&country=${encodeURIComponent(countryName)}`}
+            className="relative h-48 group cursor-pointer overflow-hidden block"
+          >
+            <Image
+              src={cat.image}
+              alt={cat.title}
+              fill
+              className="object-cover transition-transform duration-700 group-hover:scale-110"
+            />
+            <div className="absolute inset-0 bg-black/30 group-hover:bg-black/40 transition-colors flex items-center justify-center p-4">
+              <h3 className="text-white text-xl font-serif text-center drop-shadow-md">{cat.title}</h3>
+            </div>
+          </Link>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+// ===== TESTIMONIALS SECTION =====
+
+const TESTIMONIALS = [
+  { id: 1, title: 'Excellent staff', text: 'Excellent knowledgeable patient staff.', author: 'Mrs Karen Reynolds', rating: 5 },
+  { id: 2, title: 'Wonderful experience', text: 'The villa exceeded our expectations.', author: 'Mr James Wilson', rating: 5 },
+  { id: 3, title: 'Great Service', text: 'Wonderful from start to finish.', author: 'Mr Graham Thomas', rating: 5 },
+];
+
+function TestimonialsSection() {
+  return (
+    <section className="bg-white py-10 border-t border-gray-100">
+      <div className="flex flex-col items-center justify-center mb-8">
+        <div className="flex items-center gap-2 flex-wrap justify-center">
+          <span className="text-gray-500 font-serif">Average Rating:</span>
+          <div className="flex text-yellow-400">
+            {[...Array(5)].map((_, i) => (
+              <Star key={i} size={18} fill="currentColor" />
+            ))}
+          </div>
+          <span className="font-bold text-xl font-serif ml-2">4.9/5</span>
+          <span className="font-bold ml-1">feefo</span>
+        </div>
+      </div>
+
+      <div className="max-w-4xl mx-auto px-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {TESTIMONIALS.map((t) => (
+            <div key={t.id} className="p-4 text-center">
+              <div className="flex text-yellow-400 justify-center mb-2">
+                {[...Array(t.rating)].map((_, i) => (
+                  <Star key={i} size={12} fill="currentColor" />
+                ))}
+              </div>
+              <h4 className="font-bold text-sm mb-1">{t.title}</h4>
+              <p className="text-xs text-gray-600 mb-2">{t.text}</p>
+              <p className="text-[10px] text-gray-400">{t.author}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ===== NEWSLETTER SECTION =====
+
+function NewsletterSection() {
+  return (
+    <section className="relative h-[350px] overflow-hidden">
+      <div className="absolute inset-0">
+        <Image
+          src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1600&h=600&fit=crop&q=80"
+          alt="Poolside villa"
+          fill
+          className="object-cover"
+        />
+        <div className="absolute inset-0 bg-white/80 md:bg-transparent md:bg-gradient-to-r md:from-white/90 md:via-white/70 md:to-transparent"></div>
+      </div>
+
+      <div className="relative h-full max-w-6xl mx-auto px-6 md:px-20 flex items-center">
+        <div className="w-full md:w-1/2 relative z-10">
+          <div className="border-l-4 border-black pl-6 mb-6">
+            <h3 className="text-2xl font-serif text-[#3A443C] mb-3">Sign up to our newsletter</h3>
+            <p className="text-sm text-gray-600">
+              Be the first to hear about our latest villa additions and special offers.
+            </p>
+          </div>
+
+          <form className="max-w-sm space-y-3">
+            <div className="flex gap-3">
+              <input
+                type="text"
+                placeholder="FIRST NAME"
+                className="w-1/2 bg-transparent border-b border-gray-400 py-2 text-xs focus:outline-none focus:border-black"
+              />
+              <input
+                type="text"
+                placeholder="LAST NAME"
+                className="w-1/2 bg-transparent border-b border-gray-400 py-2 text-xs focus:outline-none focus:border-black"
+              />
+            </div>
+            <input
+              type="email"
+              placeholder="EMAIL ADDRESS"
+              className="w-full bg-transparent border-b border-gray-400 py-2 text-xs focus:outline-none focus:border-black"
+            />
+            <div className="pt-3">
+              <button
+                type="submit"
+                className="bg-[#3A443C] text-white px-6 py-2 font-serif uppercase tracking-widest text-[10px] hover:bg-black transition-colors"
+              >
+                Sign Me Up
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </section>
+  );
+}
