@@ -100,45 +100,14 @@ export default defineType({
         {
           type: 'image',
           options: {
-            hotspot: true, // Enable hotspot for responsive cropping
+            hotspot: true,
           },
-          fields: [
-            {
-              name: 'alt',
-              type: 'string',
-              title: 'Alt Text',
-              description: 'Describe the image for accessibility and SEO.',
-            },
-            {
-              name: 'caption',
-              type: 'string',
-              title: 'Caption',
-              description: 'Optional caption to display with the image.',
-            },
-            {
-              name: 'category',
-              type: 'string',
-              title: 'Category',
-              options: {
-                list: [
-                  { title: 'Exterior', value: 'exterior' },
-                  { title: 'Interior', value: 'interior' },
-                  { title: 'Bedroom', value: 'bedroom' },
-                  { title: 'Bathroom', value: 'bathroom' },
-                  { title: 'Kitchen', value: 'kitchen' },
-                  { title: 'Pool', value: 'pool' },
-                  { title: 'Garden', value: 'garden' },
-                  { title: 'View', value: 'view' },
-                  { title: 'Dining', value: 'dining' },
-                  { title: 'Living Area', value: 'living' },
-                ],
-              },
-              description: 'Categorize images for filtering and organization.',
-            },
-          ],
         },
       ],
-      description: 'CRITICAL: This is the PRIMARY SOURCE for villa photos. Upload high-quality images here.',
+      options: {
+        layout: 'grid',
+      },
+      description: 'Drag and drop multiple images or click to upload. Reorder by dragging.',
       validation: (Rule) => Rule.min(1).error('At least one photo is required'),
     }),
 
