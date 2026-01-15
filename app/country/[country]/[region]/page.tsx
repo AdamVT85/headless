@@ -14,6 +14,8 @@ import { MockVilla } from '@/lib/mock-db';
 import { MapPin, Search, ShieldCheck, Users, BedDouble, Bath, Star } from 'lucide-react';
 import { TownExplorer } from '@/components/llp/town-explorer';
 import { HeroSearch } from '@/components/hero-search';
+import { getClimateAverages } from '@/lib/weather';
+import { ClimateWidget } from '@/components/villa/climate-widget';
 
 // ===== REGION CONFIGURATION =====
 
@@ -489,6 +491,28 @@ export default async function RegionLandingPage({ params }: PageProps) {
   // Get first 4 villas for featured section
   const featuredVillas = regionVillas.slice(0, 4);
 
+  // Calculate average coordinates from villas for climate data
+  const villasWithCoords = regionVillas.filter((v) => {
+    const lat = typeof v.latitude === 'string' ? parseFloat(v.latitude) : v.latitude;
+    const lng = typeof v.longitude === 'string' ? parseFloat(v.longitude) : v.longitude;
+    return lat && lng && !isNaN(lat) && !isNaN(lng);
+  });
+
+  let climateData: Awaited<ReturnType<typeof getClimateAverages>> = [];
+  if (villasWithCoords.length > 0) {
+    const avgLat = villasWithCoords.reduce((sum, v) => {
+      const lat = typeof v.latitude === 'string' ? parseFloat(v.latitude) : v.latitude;
+      return sum + (lat || 0);
+    }, 0) / villasWithCoords.length;
+
+    const avgLng = villasWithCoords.reduce((sum, v) => {
+      const lng = typeof v.longitude === 'string' ? parseFloat(v.longitude) : v.longitude;
+      return sum + (lng || 0);
+    }, 0) / villasWithCoords.length;
+
+    climateData = await getClimateAverages(avgLat, avgLng);
+  }
+
   return (
     <div className="min-h-screen bg-[#F3F0E9]">
       {/* Hero Section */}
@@ -496,6 +520,15 @@ export default async function RegionLandingPage({ params }: PageProps) {
 
       {/* Intro Section */}
       <IntroSection config={config} />
+
+      {/* Climate Widget */}
+      {climateData.length > 0 && (
+        <section className="bg-[#F9F7F2] pb-12 px-6 md:px-20">
+          <div className="max-w-6xl mx-auto">
+            <ClimateWidget data={climateData} region={config.name} />
+          </div>
+        </section>
+      )}
 
       {/* Value Props */}
       <ValuePropsSection />

@@ -11,9 +11,11 @@ import Link from 'next/link';
 import { Users, Bed, Bath, Check, MapPin, Utensils, History, Waves, Mountain } from 'lucide-react';
 import { getVillaBySlug, getAllVillaSlugs } from '@/lib/villa-data-source';
 import { getVillaAvailability } from '@/lib/crm-client';
+import { getClimateAverages } from '@/lib/weather';
 import { AvailabilityCalendar } from '@/components/ui/availability-calendar';
 import { HeroGallery } from '@/components/villa/hero-gallery';
 import { AccordionItem } from '@/components/villa/info-accordion';
+import { ClimateWidget } from '@/components/villa/climate-widget';
 
 interface VillaPageProps {
   params: Promise<{
@@ -82,6 +84,13 @@ export default async function VillaPage({ params, searchParams }: VillaPageProps
     console.error('[Villa Page] Error fetching availability:', error);
     availability = [];
   }
+
+  // Fetch climate data if coordinates are available
+  const lat = typeof villa.latitude === 'string' ? parseFloat(villa.latitude) : villa.latitude;
+  const lng = typeof villa.longitude === 'string' ? parseFloat(villa.longitude) : villa.longitude;
+  const climateData = (lat && lng && !isNaN(lat) && !isNaN(lng))
+    ? await getClimateAverages(lat, lng)
+    : [];
 
   // Extract short description (first paragraph or first 200 chars)
   const shortDescription = villa.description
@@ -222,6 +231,11 @@ export default async function VillaPage({ params, searchParams }: VillaPageProps
                   dangerouslySetInnerHTML={{ __html: villa.followOnText }}
                 />
               </div>
+            )}
+
+            {/* Climate & Weather Widget */}
+            {climateData.length > 0 && (
+              <ClimateWidget data={climateData} region={villa.region} />
             )}
 
             {/* Explore Local Area */}

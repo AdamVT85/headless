@@ -13,6 +13,8 @@ import { client } from '@/lib/sanity.client';
 import { PortableText } from '@portabletext/react';
 import { getAllVillasFromSource } from '@/lib/villa-data-source';
 import { VillaCard, VillaCardGrid } from '@/components/ui/villa-card';
+import { getClimateAverages } from '@/lib/weather';
+import { ClimateWidget } from '@/components/villa/climate-widget';
 
 interface RegionPageProps {
   params: Promise<{
@@ -94,6 +96,28 @@ export default async function RegionPage({ params }: RegionPageProps) {
   const regionVillas = allVillas.filter(
     (villa) => villa.region.toLowerCase() === region.name.toLowerCase()
   );
+
+  // Calculate average coordinates from villas for climate data
+  const villasWithCoords = regionVillas.filter((v) => {
+    const lat = typeof v.latitude === 'string' ? parseFloat(v.latitude) : v.latitude;
+    const lng = typeof v.longitude === 'string' ? parseFloat(v.longitude) : v.longitude;
+    return lat && lng && !isNaN(lat) && !isNaN(lng);
+  });
+
+  let climateData: Awaited<ReturnType<typeof getClimateAverages>> = [];
+  if (villasWithCoords.length > 0) {
+    const avgLat = villasWithCoords.reduce((sum, v) => {
+      const lat = typeof v.latitude === 'string' ? parseFloat(v.latitude) : v.latitude;
+      return sum + (lat || 0);
+    }, 0) / villasWithCoords.length;
+
+    const avgLng = villasWithCoords.reduce((sum, v) => {
+      const lng = typeof v.longitude === 'string' ? parseFloat(v.longitude) : v.longitude;
+      return sum + (lng || 0);
+    }, 0) / villasWithCoords.length;
+
+    climateData = await getClimateAverages(avgLat, avgLng);
+  }
 
   const imageUrl = region.heroImage?.asset?.url || '/placeholder-villa.svg';
 
@@ -197,6 +221,15 @@ export default async function RegionPage({ params }: RegionPageProps) {
                 </div>
               ))}
             </div>
+          </div>
+        </section>
+      )}
+
+      {/* Climate Widget */}
+      {climateData.length > 0 && (
+        <section className="container mx-auto px-6 pb-12">
+          <div className="max-w-3xl mx-auto">
+            <ClimateWidget data={climateData} region={region.name} />
           </div>
         </section>
       )}
