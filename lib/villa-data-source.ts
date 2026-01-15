@@ -8,10 +8,12 @@
  * PHASE 29: Server-side module - imports from crm-client which requires server environment
  * PHASE 30: Removed 'use server' directive (causes build error with sync functions)
  *           This module is safe because it's only imported by server components
+ * PHASE 62: Merges Sanity gallery images with Salesforce villa data
  */
 
 import { getAllVillas } from '@/lib/crm-client';
 import { getAllPublishedVillas, MockVilla } from '@/lib/mock-db';
+import { getVillaMedia, getAllVillaMedia } from '@/lib/queries/villa-media';
 
 /**
  * Check if we should use mock data
@@ -67,13 +69,41 @@ export async function getAllVillasFromSource(): Promise<MockVilla[]> {
 
 /**
  * Get a single villa by slug
+ * PHASE 62: Merges Sanity gallery images with Salesforce data
  *
  * @param slug - Villa slug identifier
  * @returns Villa record or null if not found
  */
 export async function getVillaBySlug(slug: string): Promise<MockVilla | null> {
   const villas = await getAllVillasFromSource();
-  return villas.find(v => v.slug === slug) || null;
+  const villa = villas.find(v => v.slug === slug);
+
+  if (!villa) {
+    return null;
+  }
+
+  // PHASE 62: Fetch Sanity gallery images and merge with villa data
+  try {
+    const sanityMedia = await getVillaMedia(villa.id);
+
+    if (sanityMedia) {
+      console.log(`[DataSource] Found Sanity media for ${villa.title}: ${sanityMedia.galleryImages.length} gallery images`);
+
+      // Merge Sanity media with Salesforce data
+      // Sanity takes precedence for images
+      return {
+        ...villa,
+        heroImageUrl: sanityMedia.heroImageUrl || villa.heroImageUrl,
+        galleryImages: sanityMedia.galleryImages.length > 0
+          ? sanityMedia.galleryImages
+          : villa.galleryImages,
+      };
+    }
+  } catch (error) {
+    console.warn(`[DataSource] Failed to fetch Sanity media for ${villa.title}:`, error);
+  }
+
+  return villa;
 }
 
 /**
