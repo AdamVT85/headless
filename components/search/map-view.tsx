@@ -125,6 +125,7 @@ const defaultCenter = {
 interface MapViewProps {
   villas: MockVilla[];
   hoveredVillaId: string | null;
+  selectedVillaId?: string | null;
   onMarkerHover: (villaId: string | null) => void;
   onMarkerClick: (villaId: string) => void;
   isMobile?: boolean;
@@ -133,6 +134,7 @@ interface MapViewProps {
 export function MapView({
   villas,
   hoveredVillaId,
+  selectedVillaId,
   onMarkerHover,
   onMarkerClick,
   isMobile = false,
@@ -230,7 +232,7 @@ export function MapView({
           <VillaMarker
             key={villa.id}
             villa={villa}
-            isHovered={hoveredVillaId === villa.id}
+            isHovered={hoveredVillaId === villa.id || selectedVillaId === villa.id}
             onHover={onMarkerHover}
             onClick={handleMarkerClick}
           />

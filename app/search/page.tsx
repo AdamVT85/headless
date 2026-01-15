@@ -51,6 +51,7 @@ function SearchPageContent() {
   const [loading, setLoading] = useState(true);
   const [isMapView, setIsMapView] = useState(false);
   const [hoveredVillaId, setHoveredVillaId] = useState<string | null>(null);
+  const [selectedVillaId, setSelectedVillaId] = useState<string | null>(null);
   const [highlightFromMap, setHighlightFromMap] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
 
@@ -131,26 +132,26 @@ function SearchPageContent() {
     performSearch();
   }, [searchParams]);
 
-  // Handle hover from list - update map
+  // Handle hover from list - update map and clear any map selection
   const handleListHover = useCallback((villaId: string | null) => {
     setHighlightFromMap(false);
+    setSelectedVillaId(null); // Clear locked selection when user interacts with list
     setHoveredVillaId(villaId);
   }, []);
 
-  // Handle hover from map - update list and scroll
+  // Handle hover from map - only update if no locked selection
   const handleMapHover = useCallback((villaId: string | null) => {
+    // If there's a locked selection, don't change highlight on hover
+    if (selectedVillaId && villaId === null) return;
     setHighlightFromMap(true);
     setHoveredVillaId(villaId);
-  }, []);
+  }, [selectedVillaId]);
 
-  // Handle marker click on desktop - scroll to villa in list
+  // Handle marker click on desktop - lock selection to this villa
   const handleMarkerClick = useCallback((villaId: string) => {
     setHighlightFromMap(true);
+    setSelectedVillaId(villaId);
     setHoveredVillaId(villaId);
-    // Brief highlight effect
-    setTimeout(() => {
-      setHoveredVillaId(null);
-    }, 2000);
   }, []);
 
   // Toggle map view
@@ -246,7 +247,7 @@ function SearchPageContent() {
                     <VillaCardRow
                       key={villa.id}
                       villa={villa}
-                      isHighlighted={hoveredVillaId === villa.id}
+                      isHighlighted={hoveredVillaId === villa.id || selectedVillaId === villa.id}
                       onHover={handleListHover}
                       shouldScrollIntoView={highlightFromMap}
                       scrollContainerRef={listRef}
@@ -269,6 +270,7 @@ function SearchPageContent() {
             <MapView
               villas={results?.villas || []}
               hoveredVillaId={hoveredVillaId}
+              selectedVillaId={selectedVillaId}
               onMarkerHover={handleMapHover}
               onMarkerClick={handleMarkerClick}
               isMobile={false}
@@ -302,6 +304,7 @@ function SearchPageContent() {
             <MapView
               villas={results?.villas || []}
               hoveredVillaId={hoveredVillaId}
+              selectedVillaId={selectedVillaId}
               onMarkerHover={handleMapHover}
               onMarkerClick={handleMarkerClick}
               isMobile={true}
