@@ -10,6 +10,7 @@
  */
 
 import { defineType, defineField } from 'sanity';
+import { BulkImageUpload } from '../components/BulkImageUpload';
 
 export default defineType({
   name: 'villa',
@@ -107,7 +108,10 @@ export default defineType({
       options: {
         layout: 'grid',
       },
-      description: 'Drag and drop multiple images or click to upload. Reorder by dragging.',
+      components: {
+        input: BulkImageUpload,
+      },
+      description: 'Use the Bulk Upload button to select multiple images at once.',
       validation: (Rule) => Rule.min(1).error('At least one photo is required'),
     }),
 
