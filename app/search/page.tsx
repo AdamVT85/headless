@@ -14,7 +14,7 @@
 export const dynamic = 'force-dynamic';
 
 import { useState, useEffect, Suspense } from 'react';
-import { useSearchParams, useRouter, usePathname } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { searchVillas } from '@/lib/search-client';
 import { MockVilla } from '@/lib/mock-db';
 import { SearchParams } from '@/types/search';
@@ -33,49 +33,12 @@ interface SearchResult {
   };
 }
 import { VillaCard, VillaCardSkeleton, VillaCardGrid } from '@/components/ui/villa-card';
-import { MapPin, Users, Calendar, Filter } from 'lucide-react';
-import { STATIC_LOCATIONS } from '@/lib/static-locations';
-
-// PHASE 48: Build location options from structured data
-// Merge all location types into a flat sorted list for the dropdown
-const ALL_LOCATIONS = [
-  ...STATIC_LOCATIONS.countries,
-  ...STATIC_LOCATIONS.regions,
-  ...STATIC_LOCATIONS.towns
-].sort((a, b) => a.localeCompare(b));
-
-const LOCATION_OPTIONS = [
-  { value: '', label: 'All Locations' },
-  ...ALL_LOCATIONS.map(loc => ({ value: loc, label: loc }))
-];
+import { InteractiveFilterPills } from '@/components/search/interactive-filter-pills';
 
 function SearchPageContent() {
   const searchParams = useSearchParams();
-  const router = useRouter();
-  const pathname = usePathname();
   const [results, setResults] = useState<SearchResult | null>(null);
   const [loading, setLoading] = useState(true);
-  const [selectedLocation, setSelectedLocation] = useState<string>('');
-
-  // Sync selected location from URL params
-  useEffect(() => {
-    const loc = searchParams.get('loc') || searchParams.get('location') || searchParams.get('region') || searchParams.get('q') || '';
-    setSelectedLocation(loc);
-  }, [searchParams]);
-
-  // Handle location filter change
-  const handleLocationChange = (newLocation: string) => {
-    const params = new URLSearchParams(searchParams.toString());
-
-    if (newLocation) {
-      params.set('loc', newLocation);
-    } else {
-      params.delete('loc');
-      params.delete('q');
-    }
-
-    router.push(`${pathname}?${params.toString()}`);
-  };
 
   // Parse URL parameters
   useEffect(() => {
@@ -199,66 +162,18 @@ function SearchPageContent() {
             Discover luxury villas matching your criteria
           </p>
 
-          {/* Active Filters Display */}
+          {/* Interactive Filter Pills */}
           {hasFilters && results && (
-            <div className="mt-6 flex flex-wrap gap-3">
-              {(results.filters?.loc || results.filters?.q) && (
-                <div className="flex items-center gap-2 px-4 py-2 bg-olive/10 rounded-full">
-                  <MapPin className="h-4 w-4 text-olive" />
-                  <span className="text-sm font-medium text-stone-800">{getLocationText()}</span>
-                </div>
-              )}
-
-              {(results.filters?.adults || results.filters?.children) && (
-                <div className="flex items-center gap-2 px-4 py-2 bg-olive/10 rounded-full">
-                  <Users className="h-4 w-4 text-olive" />
-                  <span className="text-sm font-medium text-stone-800">{getGuestText()}</span>
-                </div>
-              )}
-
-              {results.filters?.start && results.filters?.end && (
-                <div className="flex items-center gap-2 px-4 py-2 bg-olive/10 rounded-full">
-                  <Calendar className="h-4 w-4 text-olive" />
-                  <span className="text-sm font-medium text-stone-800">{getDateText()}</span>
-                </div>
-              )}
-            </div>
+            <InteractiveFilterPills
+              location={results.filters?.loc || results.filters?.q}
+              locationType={searchParams.get('type') || undefined}
+              startDate={results.filters?.start}
+              endDate={results.filters?.end}
+              adults={results.filters?.adults || 0}
+              children={results.filters?.children || 0}
+              infants={parseInt(searchParams.get('infants') || '0')}
+            />
           )}
-        </div>
-      </section>
-
-      {/* Filter Section */}
-      <section className="bg-white border-b border-stone-200">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center gap-4">
-            <Filter className="h-5 w-5 text-olive" />
-            <label htmlFor="location-filter" className="text-sm font-medium text-stone-700">
-              Filter by Location:
-            </label>
-            <select
-              id="location-filter"
-              value={selectedLocation}
-              onChange={(e) => handleLocationChange(e.target.value)}
-              className="px-4 py-2 border border-stone-300 rounded-sm focus:outline-none focus:ring-2 focus:ring-olive focus:border-transparent"
-            >
-              {LOCATION_OPTIONS.map((option, idx) => (
-                <option
-                  key={`${option.value}-${idx}`}
-                  value={option.value}
-                >
-                  {option.label}
-                </option>
-              ))}
-            </select>
-            {selectedLocation && (
-              <button
-                onClick={() => handleLocationChange('')}
-                className="text-sm text-terracotta hover:text-terracotta-600 underline"
-              >
-                Clear filter
-              </button>
-            )}
-          </div>
         </div>
       </section>
 

@@ -573,6 +573,66 @@ export async function extractUniqueLocations(): Promise<{
 }
 
 /**
+ * Get the lowest weekly price for villas within a specific date range
+ * Used when user has selected specific dates in the search
+ *
+ * @param villaIds - Array of villa Salesforce IDs to check
+ * @param startDate - Start of requested date range (YYYY-MM-DD string)
+ * @param endDate - End of requested date range (YYYY-MM-DD string)
+ * @returns Map of villa ID to lowest weekly price in that date range
+ */
+export async function getPricesForDateRange(
+  villaIds: string[],
+  startDate: string,
+  endDate: string
+): Promise<Record<string, number>> {
+  if (villaIds.length === 0) {
+    return {};
+  }
+
+  try {
+    const connection = await getConn();
+
+    // Build IN clause for villa IDs
+    const idList = villaIds.map(id => `'${id}'`).join(',');
+
+    console.log(`[CRM DATE PRICING] Getting prices for ${villaIds.length} villas from ${startDate} to ${endDate}`);
+
+    // Query weekly rates within the date range for these villas
+    // We want rates where the week starts within or overlaps with the requested range
+    const result = await connection.query(
+      `SELECT WR_Contract__r.CON_Property__c, WR_Live_Sell_This_Year__c, WR_Week_Start_Date__c
+       FROM Weekly_Rate__c
+       WHERE WR_Contract__r.CON_Property__c IN (${idList})
+         AND WR_Week_Start_Date__c >= ${startDate}
+         AND WR_Week_Start_Date__c <= ${endDate}
+         AND WR_Live_Sell_This_Year__c > 0
+       ORDER BY WR_Live_Sell_This_Year__c ASC`
+    ).execute({ autoFetch: true, maxFetch: 10000 });
+
+    // Group by villa ID and find minimum price within the date range
+    const priceMap: Record<string, number> = {};
+    result.records.forEach((rec: any) => {
+      const villaId = rec.WR_Contract__r?.CON_Property__c;
+      const price = rec.WR_Live_Sell_This_Year__c;
+
+      if (villaId && price && price > 0) {
+        if (!priceMap[villaId] || price < priceMap[villaId]) {
+          priceMap[villaId] = price;
+        }
+      }
+    });
+
+    console.log(`[CRM DATE PRICING] Found date-specific prices for ${Object.keys(priceMap).length}/${villaIds.length} villas`);
+    return priceMap;
+
+  } catch (error) {
+    console.error('[CRM DATE PRICING] Error fetching date-specific prices:', error);
+    return {};
+  }
+}
+
+/**
  * PHASE 36: BULK AVAILABILITY QUERY (FIXED)
  * Get all villa IDs that have AT LEAST ONE available week in the date range
  * This is MUCH faster than checking each villa individually

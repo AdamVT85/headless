@@ -1,6 +1,6 @@
 'use server';
 
-import { getAllVillas, getUnavailableVillaIds } from '@/lib/crm-client';
+import { getAllVillas, getUnavailableVillaIds, getPricesForDateRange } from '@/lib/crm-client';
 import { SearchParams } from '@/types/search';
 import { MockVilla } from '@/lib/mock-db';
 
@@ -232,7 +232,8 @@ export async function searchVillas(params: SearchParams): Promise<MockVilla[]> {
       }
     }
 
-    // 5. Filter by Availability (Bulk Check)
+    // 5. Filter by Availability (Bulk Check) and get date-specific pricing
+    let dateSpecificPrices: Record<string, number> = {};
     if (params.dates?.startDate && params.dates?.endDate) {
       console.log(`[SEARCH] Applying availability filter: ${params.dates.startDate} to ${params.dates.endDate}`);
 
@@ -245,6 +246,17 @@ export async function searchVillas(params: SearchParams): Promise<MockVilla[]> {
       // Include only villas with availability
       villas = villas.filter(villa => availableIds.has(villa.id));
       console.log(`[SEARCH] After availability filter: ${villas.length} villas have availability`);
+
+      // Get date-specific prices for the filtered villas
+      if (villas.length > 0) {
+        const villaIds = villas.map(v => v.id);
+        dateSpecificPrices = await getPricesForDateRange(
+          villaIds,
+          params.dates.startDate,
+          params.dates.endDate
+        );
+        console.log(`[SEARCH] Got date-specific prices for ${Object.keys(dateSpecificPrices).length} villas`);
+      }
     }
 
     // 6. CRITICAL: PAYLOAD OPTIMIZATION
@@ -252,37 +264,43 @@ export async function searchVillas(params: SearchParams): Promise<MockVilla[]> {
     console.log(`[SEARCH] Returning ${villas.length} villas`);
 
     // Strip heavy fields and return only what's needed for the grid
-    const optimizedVillas = villas.map(v => ({
-      // Identifiers
-      id: v.id,
-      sfccId: v.sfccId,
-      sanityId: v.sanityId,
-      slug: v.slug,
+    // Use date-specific prices when available, otherwise fall back to general lowest price
+    const optimizedVillas = villas.map(v => {
+      // Use date-specific price if we have one, otherwise use the villa's general price
+      const effectivePrice = dateSpecificPrices[v.id] || v.pricePerWeek;
 
-      // Content (lightweight)
-      title: v.title,
-      name: v.name,
-      region: v.region,
-      country: v.country,
-      town: v.town,
-      heroImageUrl: v.heroImageUrl,
-      galleryImages: v.galleryImages,
-      description: '', // ⚠️ STRIPPED: Not needed for grid card
-      amenities: [], // ⚠️ STRIPPED: Not needed for grid card
+      return {
+        // Identifiers
+        id: v.id,
+        sfccId: v.sfccId,
+        sanityId: v.sanityId,
+        slug: v.slug,
 
-      // Capacity
-      maxGuests: v.maxGuests,
-      bedrooms: v.bedrooms,
-      bathrooms: v.bathrooms,
+        // Content (lightweight)
+        title: v.title,
+        name: v.name,
+        region: v.region,
+        country: v.country,
+        town: v.town,
+        heroImageUrl: v.heroImageUrl,
+        galleryImages: v.galleryImages,
+        description: '', // ⚠️ STRIPPED: Not needed for grid card
+        amenities: [], // ⚠️ STRIPPED: Not needed for grid card
 
-      // Commerce
-      pricePerWeek: v.pricePerWeek,
-      pricePerNight: v.pricePerNight,
-      bookedDates: [], // ⚠️ STRIPPED: Not needed for grid card
+        // Capacity
+        maxGuests: v.maxGuests,
+        bedrooms: v.bedrooms,
+        bathrooms: v.bathrooms,
 
-      // Status
-      published: v.published,
-    } as MockVilla));
+        // Commerce - Use date-specific price when available
+        pricePerWeek: effectivePrice,
+        pricePerNight: effectivePrice ? Math.round(effectivePrice / 7) : v.pricePerNight,
+        bookedDates: [], // ⚠️ STRIPPED: Not needed for grid card
+
+        // Status
+        published: v.published,
+      } as MockVilla;
+    });
 
     console.log('[SEARCH] ========== SEARCH COMPLETE ==========');
     console.log(`[SEARCH] Returning ${optimizedVillas.length} optimized villas`);

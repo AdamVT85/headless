@@ -14,7 +14,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search, MapPin, X, Calendar as CalendarIcon, Users, Minus, Plus } from 'lucide-react';
+import { Search, MapPin, X, Calendar as CalendarIcon, Users, Minus, Plus, ChevronDown } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { DatePicker, type DateSelection } from './search/date-picker';
@@ -247,100 +247,104 @@ export function HeroSearch() {
 
   return (
     <>
-      <div className="w-full max-w-5xl mx-auto px-4 relative z-10">
-        {/* Desktop Layout - Pill Shape */}
-        <div className="hidden md:flex items-center bg-white shadow-2xl rounded-full h-20 overflow-visible">
-          {/* Location Section - 35% */}
-          <div className="flex-[0.35] h-full border-r border-stone-200">
+      <div className="w-full max-w-[90%] md:max-w-[800px] mx-auto relative z-10">
+        {/* Desktop Layout - Location Page Style */}
+        <div className="hidden md:flex bg-white shadow-xl">
+          {/* Location Section */}
+          <div className="flex-1 p-4 border-r border-gray-200">
             <button
               onClick={() => setActiveStep('location')}
-              className="h-full w-full flex items-center px-6 text-left hover:bg-stone-50 transition-colors rounded-l-full"
+              className="w-full text-left"
             >
-              <MapPin className="h-5 w-5 text-olive mr-3 flex-shrink-0" />
-              <div className="flex-1">
-                <div className="text-xs text-stone-500 mb-1">Where?</div>
-                <div className="font-medium text-stone-800 truncate">
-                  {location?.label || 'Add location'}
-                </div>
+              <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-1">Location</label>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-700 font-serif">{location?.label || 'Any destination'}</span>
+                <ChevronDown size={14} className="text-gray-400" />
               </div>
             </button>
           </div>
 
-          {/* Dates Section - 25% */}
-          <div className="flex-[0.25] h-full border-r border-stone-200">
+          {/* Dates Section */}
+          <div className="flex-1 p-4 border-r border-gray-200">
             <button
               onClick={() => setActiveStep('dates')}
-              className="h-full w-full flex items-center px-6 text-left hover:bg-stone-50 transition-colors"
+              className="w-full text-left"
             >
-              <CalendarIcon className="h-5 w-5 text-olive mr-3 flex-shrink-0" />
-              <div className="flex-1">
-                <div className="text-xs text-stone-500 mb-1">When?</div>
-                <div className="font-medium text-stone-800 truncate">{getDateDisplayText()}</div>
+              <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-1">Dates</label>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-700 font-serif">{getDateDisplayText() === 'Add dates' ? 'Select date' : getDateDisplayText()}</span>
+                <ChevronDown size={14} className="text-gray-400" />
               </div>
             </button>
           </div>
 
-          {/* Guests Section - 25% */}
-          <div className="flex-[0.25] h-full border-r border-stone-200">
+          {/* Guests Section */}
+          <div className="flex-1 p-4">
             <button
               onClick={() => setActiveStep('guests')}
-              className="h-full w-full flex items-center px-6 text-left hover:bg-stone-50 transition-colors"
+              className="w-full text-left"
             >
-              <Users className="h-5 w-5 text-olive mr-3 flex-shrink-0" />
-              <div className="flex-1">
-                <div className="text-xs text-stone-500 mb-1">Who?</div>
-                <div className="font-medium text-stone-800 truncate">{getGuestDisplayText()}</div>
+              <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-1">Guests</label>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-700 font-serif">{getGuestDisplayText() === 'Add guests' ? 'Any' : getGuestDisplayText()}</span>
+                <ChevronDown size={14} className="text-gray-400" />
               </div>
             </button>
           </div>
 
-          {/* Search Button - 15% */}
-          <div className="flex-[0.15] h-full flex items-center justify-center px-4">
-            <button
-              onClick={handleSearch}
-              className="w-14 h-14 bg-terracotta hover:bg-terracotta/90 rounded-full flex items-center justify-center transition-colors shadow-lg"
-            >
-              <Search className="h-6 w-6 text-white" />
-            </button>
-          </div>
+          {/* Search Button */}
+          <button
+            onClick={handleSearch}
+            className="bg-[#3A443C] text-white px-8 py-4 font-serif uppercase tracking-widest text-sm hover:bg-[#2F3B34] transition-colors flex items-center justify-center gap-2"
+          >
+            Search
+          </button>
         </div>
 
         {/* Mobile Layout - Stacked */}
-        <div className="md:hidden flex flex-col bg-white shadow-2xl rounded-3xl p-4 space-y-3">
+        <div className="md:hidden flex flex-col bg-white shadow-xl">
           {/* Location */}
           <button
             onClick={() => setActiveStep('location')}
-            className="flex items-center px-4 py-3 bg-stone-50 rounded-lg border border-stone-200 text-left hover:bg-stone-100 transition-colors"
+            className="p-4 border-b border-gray-200 text-left"
           >
-            <MapPin className="h-5 w-5 text-olive mr-3" />
-            <span className="flex-1 text-stone-800">{location?.label || 'Where to?'}</span>
+            <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-1">Location</label>
+            <div className="flex justify-between items-center">
+              <span className="text-gray-700 font-serif">{location?.label || 'Any destination'}</span>
+              <ChevronDown size={14} className="text-gray-400" />
+            </div>
           </button>
 
           {/* Dates */}
           <button
             onClick={() => setActiveStep('dates')}
-            className="flex items-center px-4 py-3 bg-stone-50 rounded-lg border border-stone-200 text-left hover:bg-stone-100 transition-colors"
+            className="p-4 border-b border-gray-200 text-left"
           >
-            <CalendarIcon className="h-5 w-5 text-olive mr-3" />
-            <span className="flex-1 text-stone-800">{getDateDisplayText()}</span>
+            <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-1">Dates</label>
+            <div className="flex justify-between items-center">
+              <span className="text-gray-700 font-serif">{getDateDisplayText() === 'Add dates' ? 'Select date' : getDateDisplayText()}</span>
+              <ChevronDown size={14} className="text-gray-400" />
+            </div>
           </button>
 
           {/* Guests */}
           <button
             onClick={() => setActiveStep('guests')}
-            className="flex items-center px-4 py-3 bg-stone-50 rounded-lg border border-stone-200 text-left hover:bg-stone-100 transition-colors"
+            className="p-4 border-b border-gray-200 text-left"
           >
-            <Users className="h-5 w-5 text-olive mr-3" />
-            <span className="flex-1 text-stone-800">{getGuestDisplayText()}</span>
+            <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-1">Guests</label>
+            <div className="flex justify-between items-center">
+              <span className="text-gray-700 font-serif">{getGuestDisplayText() === 'Add guests' ? 'Any' : getGuestDisplayText()}</span>
+              <ChevronDown size={14} className="text-gray-400" />
+            </div>
           </button>
 
           {/* Search Button */}
           <button
             onClick={handleSearch}
-            className="w-full bg-terracotta hover:bg-terracotta/90 text-white py-4 rounded-lg font-semibold flex items-center justify-center gap-2 transition-colors shadow-lg"
+            className="bg-[#3A443C] text-white px-8 py-4 font-serif uppercase tracking-widest text-sm hover:bg-[#2F3B34] transition-colors flex items-center justify-center gap-2"
           >
-            <Search className="h-5 w-5" />
-            Search Villas
+            Search
           </button>
         </div>
       </div>
@@ -466,18 +470,18 @@ export function HeroSearch() {
             onClick={() => setActiveStep(null)}
           />
 
-          {/* Desktop: Centered Modal */}
-          <div className="hidden md:block fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] max-w-[90vw] max-h-[85vh] bg-white z-[9999] shadow-2xl rounded-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-stone-200">
-              <h3 className="font-serif text-lg font-medium text-olive">Select Dates</h3>
+          {/* Desktop: Centered Modal - Reduced size for tight fit */}
+          <div className="hidden md:block fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[810px] max-w-[90vw] bg-white z-[9999] shadow-2xl rounded-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between px-5 py-3 border-b border-stone-200">
+              <h3 className="font-serif text-base font-medium text-olive">Select Dates</h3>
               <button
                 onClick={() => setActiveStep(null)}
-                className="p-2 hover:bg-stone-100 rounded-full transition-colors"
+                className="p-1.5 hover:bg-stone-100 rounded-full transition-colors"
               >
-                <X className="h-6 w-6 text-stone-500" />
+                <X className="h-5 w-5 text-stone-500" />
               </button>
             </div>
-            <div className="p-8 overflow-y-auto max-h-[calc(85vh-80px)] min-h-[500px]">
+            <div className="p-5">
               <DatePicker
                 value={dates}
                 onChange={handleDateChange}

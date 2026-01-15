@@ -198,12 +198,12 @@ export function DatePicker({ value, onChange, className, forceOpen = false, onCo
     return (
       <div className={cn('w-full', className)}>
         {/* Mode Toggle - RALPH AUDIT: Brand Colors */}
-        <div className="flex items-center gap-2 bg-stone-200 rounded-full p-1 mb-6">
+        <div className="flex items-center gap-2 bg-stone-200 rounded-full p-1 mb-4">
           <button
             type="button"
             onClick={() => setMode('specific')}
             className={cn(
-              'flex-1 py-2 px-4 rounded-full font-semibold transition-colors',
+              'flex-1 py-1.5 px-3 rounded-full font-semibold text-sm transition-colors',
               value.mode === 'specific'
                 ? 'bg-olive text-white'
                 : 'text-stone-600 hover:text-stone-800'
@@ -215,7 +215,7 @@ export function DatePicker({ value, onChange, className, forceOpen = false, onCo
             type="button"
             onClick={() => setMode('flexible')}
             className={cn(
-              'flex-1 py-2 px-4 rounded-full font-semibold transition-colors',
+              'flex-1 py-1.5 px-3 rounded-full font-semibold text-sm transition-colors',
               value.mode === 'flexible'
                 ? 'bg-olive text-white'
                 : 'text-stone-600 hover:text-stone-800'
@@ -250,7 +250,7 @@ export function DatePicker({ value, onChange, className, forceOpen = false, onCo
 
         {/* PHASE 26: Done Button - Only show if onComplete callback provided */}
         {onComplete && (
-          <div className="mt-8 pt-6 border-t border-stone-200">
+          <div className="mt-4 pt-4 border-t border-stone-200">
             <button
               type="button"
               onClick={(e) => {
@@ -261,7 +261,7 @@ export function DatePicker({ value, onChange, className, forceOpen = false, onCo
               }}
               disabled={!canApply()}
               className={cn(
-                'w-full py-3 rounded-lg font-semibold transition-colors',
+                'w-full py-2.5 rounded-lg font-semibold text-sm transition-colors',
                 canApply()
                   ? 'bg-olive hover:bg-olive/90 text-white'
                   : 'bg-stone-200 text-stone-400 cursor-not-allowed'
@@ -414,9 +414,9 @@ function SpecificModeCalendar({
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {/* Dual Calendar - RALPH AUDIT: Mobile Responsive */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <CalendarMonth
           month={currentMonth}
           startDate={startDate}
@@ -444,14 +444,14 @@ function SpecificModeCalendar({
       </div>
 
       {/* Flexibility Pills */}
-      <div className="flex flex-wrap gap-2 pt-4 border-t border-stone-200">
+      <div className="flex flex-wrap gap-1.5 pt-3 border-t border-stone-200">
         {[0, 1, 2, 3, 7].map((days) => (
           <button
             key={days}
             type="button"
             onClick={() => onFlexibilityChange(days)}
             className={cn(
-              'px-4 py-2 rounded-full text-sm font-medium transition-colors',
+              'px-3 py-1.5 rounded-full text-xs font-medium transition-colors',
               flexibility === days
                 ? 'bg-olive text-white'
                 : 'bg-stone-100 text-stone-700 hover:bg-stone-200'
@@ -647,7 +647,7 @@ function CalendarMonth({
       {/* Header - RALPH AUDIT: Brand Font (Crimson Pro) */}
       {/* PHASE 22: Wrap header to isolate navigation from parent event listeners */}
       <div
-        className="flex items-center justify-between mb-4"
+        className="flex items-center justify-between mb-2"
         onClick={(e) => e.stopPropagation()}
       >
         {showNavigation !== 'none' && showNavigation !== 'next' && onPrevMonth ? (
@@ -660,15 +660,15 @@ function CalendarMonth({
               e.nativeEvent.stopImmediatePropagation(); // Hard stop all listeners
               onPrevMonth();
             }}
-            className="p-2 hover:bg-stone-100 rounded-lg transition-colors"
+            className="p-1.5 hover:bg-stone-100 rounded-lg transition-colors"
           >
-            <ChevronLeft className="h-5 w-5 text-olive" />
+            <ChevronLeft className="h-4 w-4 text-olive" />
           </button>
         ) : (
-          <div className="w-9" />
+          <div className="w-7" />
         )}
 
-        <h3 className="font-serif text-lg font-medium text-olive">
+        <h3 className="font-serif text-base font-medium text-olive">
           {format(month, 'MMMM yyyy')}
         </h3>
 
@@ -682,26 +682,26 @@ function CalendarMonth({
               e.nativeEvent.stopImmediatePropagation(); // Hard stop all listeners
               onNextMonth();
             }}
-            className="p-2 hover:bg-stone-100 rounded-lg transition-colors"
+            className="p-1.5 hover:bg-stone-100 rounded-lg transition-colors"
           >
-            <ChevronRight className="h-5 w-5 text-olive" />
+            <ChevronRight className="h-4 w-4 text-olive" />
           </button>
         ) : (
-          <div className="w-9" />
+          <div className="w-7" />
         )}
       </div>
 
       {/* Weekday Headers */}
-      <div className="grid grid-cols-7 gap-1 mb-2">
+      <div className="grid grid-cols-7 gap-0.5 mb-1">
         {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => (
-          <div key={i} className="text-center text-sm font-semibold text-stone-400 py-1">
+          <div key={i} className="text-center text-xs font-semibold text-stone-400 py-0.5">
             {day}
           </div>
         ))}
       </div>
 
       {/* Calendar Grid - PHASE 15: Always 6 rows (42 cells) */}
-      <div className="grid grid-cols-7 gap-1">
+      <div className="grid grid-cols-7 gap-0.5">
         {days.map((day) => {
           const past = isPast(day);
           const selected = isSelected(day);
@@ -714,7 +714,7 @@ function CalendarMonth({
               onClick={() => !past && onDateClick(day)}
               disabled={past}
               className={cn(
-                'aspect-square flex items-center justify-center text-sm rounded-full transition-colors',
+                'aspect-square flex items-center justify-center text-xs rounded-full transition-colors',
                 // PHASE 15: Dim dates outside current month
                 !inCurrentMonth && 'text-stone-300',
                 past && 'text-stone-300 cursor-not-allowed',
