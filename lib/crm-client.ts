@@ -154,7 +154,7 @@ export function clearConnection(): void {
 
 /**
  * Get the lowest available price for multiple villas in bulk
- * Queries all weekly rates for the given villas and returns the minimum available price for each
+ * Uses SOQL aggregate (MIN) to efficiently get one row per villa
  *
  * @param villaIds - Array of villa Salesforce IDs
  * @returns Map of villa ID to lowest available price
@@ -171,27 +171,25 @@ async function getLowestPricesForVillas(villaIds: string[]): Promise<Record<stri
     // Build IN clause for villa IDs
     const idList = villaIds.map(id => `'${id}'`).join(',');
 
-    // Query all weekly rates for these villas (regardless of availability status)
-    // This ensures we show pricing even if all weeks are currently booked
+    // Use SOQL aggregate to get minimum price per villa in a single efficient query
+    // Returns ~500 rows (one per villa) instead of ~26,000 (one per week)
     const result = await connection.query(
-      `SELECT WR_Contract__r.CON_Property__c, WR_Live_Sell_This_Year__c
+      `SELECT WR_Contract__r.CON_Property__c villaId, MIN(WR_Live_Sell_This_Year__c) minPrice
        FROM Weekly_Rate__c
        WHERE WR_Contract__r.CON_Property__c IN (${idList})
          AND WR_Week_Start_Date__c >= ${todayStr}
          AND WR_Live_Sell_This_Year__c > 0
-       ORDER BY WR_Live_Sell_This_Year__c ASC`
-    ).execute({ autoFetch: true, maxFetch: 10000 });
+       GROUP BY WR_Contract__r.CON_Property__c`
+    );
 
-    // Group by villa ID and find minimum price
+    // Build price map from aggregate results
     const priceMap: Record<string, number> = {};
     result.records.forEach((rec: any) => {
-      const villaId = rec.WR_Contract__r?.CON_Property__c;
-      const price = rec.WR_Live_Sell_This_Year__c;
+      const villaId = rec.villaId;
+      const price = rec.minPrice;
 
       if (villaId && price && price > 0) {
-        if (!priceMap[villaId] || price < priceMap[villaId]) {
-          priceMap[villaId] = price;
-        }
+        priceMap[villaId] = price;
       }
     });
 
@@ -582,7 +580,7 @@ export async function extractUniqueLocations(): Promise<{
 
 /**
  * Get the lowest weekly price for villas within a specific date range
- * Used when user has selected specific dates in the search
+ * Uses SOQL aggregate (MIN) to efficiently get one row per villa
  *
  * @param villaIds - Array of villa Salesforce IDs to check
  * @param startDate - Start of requested date range (YYYY-MM-DD string)
@@ -606,28 +604,26 @@ export async function getPricesForDateRange(
 
     console.log(`[CRM DATE PRICING] Getting prices for ${villaIds.length} villas from ${startDate} to ${endDate}`);
 
-    // Query weekly rates within the date range for these villas
-    // We want rates where the week starts within or overlaps with the requested range
+    // Use SOQL aggregate to get minimum price per villa within the date range
+    // Returns one row per villa instead of one row per week
     const result = await connection.query(
-      `SELECT WR_Contract__r.CON_Property__c, WR_Live_Sell_This_Year__c, WR_Week_Start_Date__c
+      `SELECT WR_Contract__r.CON_Property__c villaId, MIN(WR_Live_Sell_This_Year__c) minPrice
        FROM Weekly_Rate__c
        WHERE WR_Contract__r.CON_Property__c IN (${idList})
          AND WR_Week_Start_Date__c >= ${startDate}
          AND WR_Week_Start_Date__c <= ${endDate}
          AND WR_Live_Sell_This_Year__c > 0
-       ORDER BY WR_Live_Sell_This_Year__c ASC`
-    ).execute({ autoFetch: true, maxFetch: 10000 });
+       GROUP BY WR_Contract__r.CON_Property__c`
+    );
 
-    // Group by villa ID and find minimum price within the date range
+    // Build price map from aggregate results
     const priceMap: Record<string, number> = {};
     result.records.forEach((rec: any) => {
-      const villaId = rec.WR_Contract__r?.CON_Property__c;
-      const price = rec.WR_Live_Sell_This_Year__c;
+      const villaId = rec.villaId;
+      const price = rec.minPrice;
 
       if (villaId && price && price > 0) {
-        if (!priceMap[villaId] || price < priceMap[villaId]) {
-          priceMap[villaId] = price;
-        }
+        priceMap[villaId] = price;
       }
     });
 
