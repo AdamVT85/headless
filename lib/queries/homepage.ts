@@ -102,7 +102,7 @@ export interface USP {
 export interface Collection {
   _key: string;
   title: string;
-  image: SanityImage;
+  image?: SanityImage;
   linkUrl?: string;
 }
 
@@ -120,7 +120,7 @@ export interface VillaCategory {
   _key: string;
   title: string;
   description?: string;
-  image: SanityImage;
+  image?: SanityImage;
   linkUrl?: string;
 }
 
