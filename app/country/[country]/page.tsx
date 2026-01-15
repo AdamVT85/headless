@@ -78,7 +78,7 @@ const COUNTRY_CONFIG: Record<string, CountryConfig> = {
   croatia: {
     name: 'Croatia',
     slug: 'croatia',
-    heroImage: 'https://images.unsplash.com/photo-1555990538-1bf27e9b7558?w=1920&h=1080&fit=crop&q=80',
+    heroImage: 'https://images.unsplash.com/photo-1590001155093-a3c66ab0c3ff?w=1920&h=1080&fit=crop&q=80',
     mapImage: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Croatia_location_map.svg/800px-Croatia_location_map.svg.png',
     introTitle: 'Our Croatian holiday villas',
     introSubtitle: 'Adriatic Splendor',
@@ -262,23 +262,23 @@ export default async function CountryLandingPage({ params }: PageProps) {
       {/* Intro Section */}
       <IntroSection config={config} />
 
+      {/* Region Explorer - Interactive Tab Component */}
+      <RegionExplorer
+        country={config.name}
+        regions={config.regions.map(r => r.label)}
+      />
+
+      {/* Value Props */}
+      <ValuePropsSection />
+
       {/* Climate Widget */}
       {climateData.length > 0 && (
-        <section className="bg-[#F9F7F2] pb-12 px-6 md:px-20">
+        <section className="bg-[#F9F7F2] py-12 px-6 md:px-20">
           <div className="max-w-6xl mx-auto">
             <ClimateWidget data={climateData} region={config.name} />
           </div>
         </section>
       )}
-
-      {/* Value Props */}
-      <ValuePropsSection />
-
-      {/* Region Explorer - Interactive Tab Component (Phase 51) */}
-      <RegionExplorer
-        country={config.name}
-        regions={config.regions.map(r => r.label)}
-      />
 
       {/* Featured Villas */}
       <FeaturedVillasSection villas={countryVillas} countryName={config.name} />
@@ -310,9 +310,12 @@ function HeroSection({ config }: { config: CountryConfig }) {
       />
 
       {/* Overlay */}
-      <div className="absolute inset-0 bg-black/30 flex flex-col justify-center items-center">
-        <h1 className="text-white text-4xl md:text-6xl lg:text-7xl font-serif tracking-wide drop-shadow-lg text-center px-4">
-          Holiday Villas in {config.name}
+      <div className="absolute inset-0 bg-black/30"></div>
+
+      {/* Title - Centered between top and search */}
+      <div className="absolute inset-x-0 top-[50px] md:top-[80px] text-center px-4">
+        <h1 className="text-4xl md:text-6xl lg:text-7xl font-serif text-white tracking-wide drop-shadow-lg">
+          Holiday Villas with Private Pools in {config.name}
         </h1>
       </div>
 
@@ -353,8 +356,8 @@ function IntroSection({ config }: { config: CountryConfig }) {
           </div>
         </div>
 
-        {/* Map */}
-        <div className="flex-1 w-full flex justify-center items-center">
+        {/* Map - Hidden on mobile */}
+        <div className="hidden md:flex flex-1 w-full justify-center items-center">
           <div className="relative w-full max-w-md h-[350px]">
             <Image
               src={config.mapImage}
@@ -408,20 +411,21 @@ function ValuePropsSection() {
   ];
 
   return (
-    <section className="bg-[#F9F7F2] pb-20 px-6 md:px-20 border-b border-gray-200">
-      <div className="text-center mb-12">
-        <h3 className="text-2xl font-serif text-[#3A443C]">Why book with Vintage?</h3>
+    <section className="bg-[#F9F7F2] pb-10 md:pb-20 px-4 md:px-20 border-b border-gray-200">
+      <div className="text-center mb-6 md:mb-12">
+        <h3 className="text-xl md:text-2xl font-serif text-[#3A443C]">Why book with Vintage?</h3>
       </div>
 
-      <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-12 text-center divide-y md:divide-y-0 md:divide-x divide-gray-300">
+      <div className="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-12 text-center md:divide-x divide-gray-300">
         {props.map((prop, index) => (
-          <div key={index} className="flex flex-col items-center px-4 pt-8 md:pt-0">
-            <div className="mb-6 p-4 border-2 border-gray-800 rounded-full w-20 h-20 flex items-center justify-center">
-              <prop.icon size={32} className="text-gray-800" strokeWidth={1.5} />
+          <div key={index} className="flex flex-col items-center px-2 md:px-4">
+            <div className="mb-3 md:mb-6 p-2 md:p-4 border-2 border-gray-800 rounded-full w-12 h-12 md:w-20 md:h-20 flex items-center justify-center">
+              <prop.icon size={20} className="md:hidden text-gray-800" strokeWidth={1.5} />
+              <prop.icon size={32} className="hidden md:block text-gray-800" strokeWidth={1.5} />
             </div>
-            <h4 className="text-xl font-serif mb-3">{prop.title}</h4>
-            <p className="text-sm text-gray-500 mb-4 px-6">{prop.description}</p>
-            <a href="#" className="text-xs uppercase underline tracking-widest text-gray-700 hover:text-black">
+            <h4 className="text-sm md:text-xl font-serif mb-2 md:mb-3">{prop.title}</h4>
+            <p className="text-xs md:text-sm text-gray-500 mb-3 md:mb-4 px-0 md:px-6 line-clamp-3 md:line-clamp-none">{prop.description}</p>
+            <a href="#" className="text-[10px] md:text-xs uppercase underline tracking-widest text-gray-700 hover:text-black">
               Learn More
             </a>
           </div>

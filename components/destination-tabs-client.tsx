@@ -1,11 +1,12 @@
 /**
  * Destination Tabs - Client Component
  * Tabbed destination selector matching location page styling
+ * Supports swipe gestures on touch devices
  */
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 
@@ -64,7 +65,7 @@ const defaultDestinations: Record<string, DestinationContent> = {
   'Croatia': {
     title: 'Croatia',
     slug: 'croatia',
-    imageUrl: 'https://images.unsplash.com/photo-1555990538-1e7a0e3e8b77?auto=format&fit=crop&w=1200&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1590001155093-a3c66ab0c3ff?auto=format&fit=crop&w=1200&q=80',
     introduction: 'Crystal-clear Adriatic waters and historic towns await in our Croatian villa collection. From the ancient walls of Dubrovnik to the hidden coves of the Dalmatian coast, discover Croatia\'s magic.',
   },
   'Portugal': {
@@ -79,6 +80,34 @@ const destinationKeys = ['Spain', 'France', 'Italy', 'Greece', 'Balearic Islands
 
 export function DestinationTabsClient({ destinations, sectionTitle }: DestinationTabsClientProps) {
   const [activeTab, setActiveTab] = useState('Spain');
+  const touchStartX = useRef<number | null>(null);
+  const touchEndX = useRef<number | null>(null);
+  const tabContainerRef = useRef<HTMLDivElement>(null);
+  const tabRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+
+  // Minimum swipe distance to trigger navigation (in pixels)
+  const minSwipeDistance = 50;
+
+  // Scroll the tab into view when activeTab changes
+  useEffect(() => {
+    const activeButton = tabRefs.current[activeTab];
+    const container = tabContainerRef.current;
+
+    if (activeButton && container) {
+      const containerRect = container.getBoundingClientRect();
+      const buttonRect = activeButton.getBoundingClientRect();
+
+      // Calculate if button is outside visible area
+      const isLeftOfView = buttonRect.left < containerRect.left;
+      const isRightOfView = buttonRect.right > containerRect.right;
+
+      if (isLeftOfView || isRightOfView) {
+        // Scroll to center the button in the container
+        const scrollLeft = activeButton.offsetLeft - (container.offsetWidth / 2) + (activeButton.offsetWidth / 2);
+        container.scrollTo({ left: scrollLeft, behavior: 'smooth' });
+      }
+    }
+  }, [activeTab]);
 
   // Merge CMS data with defaults
   const getDestinationContent = (key: string): DestinationContent => {
@@ -94,6 +123,48 @@ export function DestinationTabsClient({ destinations, sectionTitle }: Destinatio
     };
   };
 
+  // Navigate to next/previous destination
+  const navigateDestination = (direction: 'next' | 'prev') => {
+    const currentIndex = destinationKeys.indexOf(activeTab);
+    let newIndex: number;
+
+    if (direction === 'next') {
+      newIndex = currentIndex < destinationKeys.length - 1 ? currentIndex + 1 : 0;
+    } else {
+      newIndex = currentIndex > 0 ? currentIndex - 1 : destinationKeys.length - 1;
+    }
+
+    setActiveTab(destinationKeys[newIndex]);
+  };
+
+  // Touch event handlers
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.targetTouches[0].clientX;
+    touchEndX.current = null;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    touchEndX.current = e.targetTouches[0].clientX;
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStartX.current || !touchEndX.current) return;
+
+    const distance = touchStartX.current - touchEndX.current;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+
+    if (isLeftSwipe) {
+      navigateDestination('next');
+    } else if (isRightSwipe) {
+      navigateDestination('prev');
+    }
+
+    // Reset values
+    touchStartX.current = null;
+    touchEndX.current = null;
+  };
+
   const activeContent = getDestinationContent(activeTab);
   const displayTitle = activeTab === 'Balearic Islands' ? 'the Balearics' : activeContent.title;
 
@@ -101,7 +172,10 @@ export function DestinationTabsClient({ destinations, sectionTitle }: Destinatio
     <section className="bg-[#F3F0E9]">
       {/* Tab Navigation */}
       <div className="flex justify-center border-b border-gray-300">
-        <div className="flex space-x-4 md:space-x-12 px-4 pt-8 pb-4 overflow-x-auto">
+        <div
+          ref={tabContainerRef}
+          className="flex space-x-4 md:space-x-12 px-4 pt-8 pb-4 overflow-x-auto scroll-smooth"
+        >
           {destinationKeys.map((key) => {
             const tabTitle = key === 'Balearic Islands' ? 'Balearics' : key;
             const isActive = activeTab === key;
@@ -109,6 +183,7 @@ export function DestinationTabsClient({ destinations, sectionTitle }: Destinatio
             return (
               <button
                 key={key}
+                ref={(el) => { tabRefs.current[key] = el; }}
                 onClick={() => setActiveTab(key)}
                 className={`text-sm font-serif uppercase tracking-widest pb-4 transition-all whitespace-nowrap ${
                   isActive
@@ -123,8 +198,13 @@ export function DestinationTabsClient({ destinations, sectionTitle }: Destinatio
         </div>
       </div>
 
-      {/* Content Area */}
-      <div className="flex flex-col md:flex-row h-auto md:h-[500px]">
+      {/* Content Area - Swipeable */}
+      <div
+        className="flex flex-col md:flex-row h-auto md:h-[500px]"
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
         {/* Image Side */}
         <div className="w-full md:w-1/2 h-[300px] md:h-full relative bg-gray-200 overflow-hidden">
           <Image
@@ -134,12 +214,6 @@ export function DestinationTabsClient({ destinations, sectionTitle }: Destinatio
             fill
             className="object-cover transition-opacity duration-500"
           />
-          <Link
-            href={`/villas-in-${activeContent.slug}`}
-            className="absolute bottom-4 left-4 border border-white px-4 py-2 text-white text-xs cursor-pointer hover:bg-white/20 transition-colors uppercase tracking-widest"
-          >
-            View Galleries
-          </Link>
         </div>
 
         {/* Text Side */}

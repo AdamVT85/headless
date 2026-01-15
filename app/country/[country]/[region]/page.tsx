@@ -359,7 +359,7 @@ const REGION_CONFIG: Record<string, Record<string, RegionConfig>> = {
       slug: 'dubrovnik',
       country: 'Croatia',
       countrySlug: 'croatia',
-      heroImage: 'https://images.unsplash.com/photo-1555990538-1bf27e9b7558?w=1920&h=1080&fit=crop&q=80',
+      heroImage: 'https://images.unsplash.com/photo-1590001155093-a3c66ab0c3ff?w=1920&h=1080&fit=crop&q=80',
       introTitle: 'Our Dubrovnik villas',
       introSubtitle: 'Pearl of the Adriatic',
       introText: [
@@ -518,20 +518,8 @@ export default async function RegionLandingPage({ params }: PageProps) {
       {/* Hero Section */}
       <HeroSection config={config} />
 
-      {/* Intro Section */}
+      {/* Intro Section (includes Quick Facts) */}
       <IntroSection config={config} />
-
-      {/* Climate Widget */}
-      {climateData.length > 0 && (
-        <section className="bg-[#F9F7F2] pb-12 px-6 md:px-20">
-          <div className="max-w-6xl mx-auto">
-            <ClimateWidget data={climateData} region={config.name} />
-          </div>
-        </section>
-      )}
-
-      {/* Value Props */}
-      <ValuePropsSection />
 
       {/* Town Explorer */}
       {towns.length > 0 && (
@@ -539,6 +527,18 @@ export default async function RegionLandingPage({ params }: PageProps) {
           region={config.name}
           towns={towns}
         />
+      )}
+
+      {/* Value Props */}
+      <ValuePropsSection />
+
+      {/* Climate Widget */}
+      {climateData.length > 0 && (
+        <section className="bg-[#F9F7F2] py-12 px-6 md:px-20">
+          <div className="max-w-6xl mx-auto">
+            <ClimateWidget data={climateData} region={config.name} />
+          </div>
+        </section>
       )}
 
       {/* Featured Villas */}
@@ -569,9 +569,13 @@ function HeroSection({ config }: { config: RegionConfig }) {
         priority
       />
 
-      <div className="absolute inset-0 bg-black/30 flex flex-col justify-center items-center">
-        <h1 className="text-white text-4xl md:text-6xl lg:text-7xl font-serif tracking-wide drop-shadow-lg text-center px-4">
-          Holiday Villas in {config.name}
+      {/* Overlay */}
+      <div className="absolute inset-0 bg-black/30"></div>
+
+      {/* Title - Centered between top and search */}
+      <div className="absolute inset-x-0 top-[50px] md:top-[80px] text-center px-4">
+        <h1 className="text-4xl md:text-6xl lg:text-7xl font-serif text-white tracking-wide drop-shadow-lg">
+          Holiday Villas with Private Pools in {config.name}
         </h1>
       </div>
 
@@ -593,7 +597,7 @@ function HeroSection({ config }: { config: RegionConfig }) {
 
 function IntroSection({ config }: { config: RegionConfig }) {
   return (
-    <section className="bg-[#F9F7F2] py-16 px-6 md:px-20">
+    <section className="bg-[#F9F7F2] pt-16 pb-10 md:pb-16 px-6 md:px-20">
       <div className="max-w-6xl mx-auto">
         {/* Breadcrumbs */}
         <div className="text-xs uppercase tracking-widest text-gray-500 mb-8">
@@ -606,7 +610,7 @@ function IntroSection({ config }: { config: RegionConfig }) {
           <span className="text-black">Villas in {config.name}</span>
         </div>
 
-        <div className="flex flex-col lg:flex-row gap-12 items-start">
+        <div className="flex flex-col lg:flex-row gap-12 items-center lg:items-start">
           {/* Text Content */}
           <div className="lg:w-2/3 space-y-6">
             <h2 className="text-3xl md:text-4xl font-serif text-[#3A443C]">{config.introTitle}</h2>
@@ -673,19 +677,20 @@ function ValuePropsSection() {
   ];
 
   return (
-    <section className="bg-[#F9F7F2] pb-16 px-6 md:px-20 border-b border-gray-200">
-      <div className="text-center mb-10">
-        <h3 className="text-2xl font-serif text-[#3A443C]">Why book with Vintage?</h3>
+    <section className="bg-[#F9F7F2] pb-10 md:pb-16 px-4 md:px-20 border-b border-gray-200">
+      <div className="text-center mb-6 md:mb-10">
+        <h3 className="text-xl md:text-2xl font-serif text-[#3A443C]">Why book with Vintage?</h3>
       </div>
 
-      <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
+      <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-8 text-center">
         {props.map((prop, index) => (
-          <div key={index} className="flex flex-col items-center px-4">
-            <div className="mb-4 p-3 border-2 border-gray-800 rounded-full">
-              <prop.icon size={28} className="text-gray-800" strokeWidth={1.5} />
+          <div key={index} className="flex flex-col items-center px-2 md:px-4">
+            <div className="mb-3 md:mb-4 p-2 md:p-3 border-2 border-gray-800 rounded-full">
+              <prop.icon size={20} className="md:hidden text-gray-800" strokeWidth={1.5} />
+              <prop.icon size={28} className="hidden md:block text-gray-800" strokeWidth={1.5} />
             </div>
-            <h4 className="text-lg font-serif mb-2">{prop.title}</h4>
-            <p className="text-sm text-gray-500">{prop.description}</p>
+            <h4 className="text-sm md:text-lg font-serif mb-1 md:mb-2">{prop.title}</h4>
+            <p className="text-xs md:text-sm text-gray-500 line-clamp-3 md:line-clamp-none">{prop.description}</p>
           </div>
         ))}
       </div>

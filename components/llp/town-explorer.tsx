@@ -5,9 +5,10 @@
  *
  * Interactive tabbed component for exploring towns within a region.
  * Similar to RegionExplorer but scoped to town-level navigation.
+ * Supports swipe gestures on touch devices.
  */
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 
@@ -28,6 +29,76 @@ interface TownExplorerProps {
 
 export function TownExplorer({ region, towns, regionImage }: TownExplorerProps) {
   const [activeTown, setActiveTown] = useState(towns[0] || 'Unknown');
+  const touchStartX = useRef<number | null>(null);
+  const touchEndX = useRef<number | null>(null);
+  const tabContainerRef = useRef<HTMLDivElement>(null);
+  const tabRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+
+  // Minimum swipe distance to trigger navigation (in pixels)
+  const minSwipeDistance = 50;
+
+  // Scroll the tab into view when activeTown changes
+  useEffect(() => {
+    const activeButton = tabRefs.current[activeTown];
+    const container = tabContainerRef.current;
+
+    if (activeButton && container) {
+      const containerRect = container.getBoundingClientRect();
+      const buttonRect = activeButton.getBoundingClientRect();
+
+      // Calculate if button is outside visible area
+      const isLeftOfView = buttonRect.left < containerRect.left;
+      const isRightOfView = buttonRect.right > containerRect.right;
+
+      if (isLeftOfView || isRightOfView) {
+        // Scroll to center the button in the container
+        const scrollLeft = activeButton.offsetLeft - (container.offsetWidth / 2) + (activeButton.offsetWidth / 2);
+        container.scrollTo({ left: scrollLeft, behavior: 'smooth' });
+      }
+    }
+  }, [activeTown]);
+
+  // Navigate to next/previous town
+  const navigateTown = (direction: 'next' | 'prev') => {
+    const currentIndex = towns.indexOf(activeTown);
+    let newIndex: number;
+
+    if (direction === 'next') {
+      newIndex = currentIndex < towns.length - 1 ? currentIndex + 1 : 0;
+    } else {
+      newIndex = currentIndex > 0 ? currentIndex - 1 : towns.length - 1;
+    }
+
+    setActiveTown(towns[newIndex]);
+  };
+
+  // Touch event handlers
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.targetTouches[0].clientX;
+    touchEndX.current = null;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    touchEndX.current = e.targetTouches[0].clientX;
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStartX.current || !touchEndX.current) return;
+
+    const distance = touchStartX.current - touchEndX.current;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+
+    if (isLeftSwipe) {
+      navigateTown('next');
+    } else if (isRightSwipe) {
+      navigateTown('prev');
+    }
+
+    // Reset values
+    touchStartX.current = null;
+    touchEndX.current = null;
+  };
 
   // Generate consistent fallback image based on town name
   const getTownImage = (townName: string) => {
@@ -48,16 +119,20 @@ export function TownExplorer({ region, towns, regionImage }: TownExplorerProps) 
   return (
     <section className="bg-[#F3F0E9]">
       {/* Section Header */}
-      <div className="text-center pt-12 pb-4">
+      <div className="text-center pt-8 pb-4">
         <h3 className="text-2xl font-serif text-[#3A443C]">Browse our villas by town</h3>
       </div>
 
       {/* Tab Navigation */}
       <div className="flex justify-center border-b border-gray-300">
-        <div className="flex space-x-4 md:space-x-8 px-4 pt-4 pb-4 overflow-x-auto">
+        <div
+          ref={tabContainerRef}
+          className="flex space-x-4 md:space-x-8 px-4 pt-4 pb-4 overflow-x-auto scroll-smooth"
+        >
           {towns.map((town) => (
             <button
               key={town}
+              ref={(el) => { tabRefs.current[town] = el; }}
               onClick={() => setActiveTown(town)}
               className={`text-sm font-serif uppercase tracking-widest pb-4 transition-all whitespace-nowrap ${
                 activeTown === town
@@ -71,8 +146,13 @@ export function TownExplorer({ region, towns, regionImage }: TownExplorerProps) 
         </div>
       </div>
 
-      {/* Spotlight Content */}
-      <div className="flex flex-col md:flex-row h-auto md:h-[400px]">
+      {/* Spotlight Content - Swipeable */}
+      <div
+        className="flex flex-col md:flex-row h-auto md:h-[400px]"
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
         {/* Image Side */}
         <div className="w-full md:w-1/2 h-[250px] md:h-full relative bg-gray-200 overflow-hidden">
           <Image
@@ -82,12 +162,6 @@ export function TownExplorer({ region, towns, regionImage }: TownExplorerProps) 
             fill
             className="object-cover transition-opacity duration-500 animate-fadeIn"
           />
-          <Link
-            href={`/search?location=${encodeURIComponent(activeTown)}`}
-            className="absolute bottom-4 left-4 border border-white px-4 py-2 text-white text-xs cursor-pointer hover:bg-white/20 transition-colors uppercase tracking-widest"
-          >
-            View Galleries
-          </Link>
         </div>
 
         {/* Text Side */}

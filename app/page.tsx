@@ -173,8 +173,8 @@ export default async function HomePage() {
     <div className="min-h-screen bg-white">
       <Hero data={data} />
       <USPSection data={data} />
-      <HottestCollections data={data} />
       <DestinationTabs data={data} destinations={destinationsMap} />
+      <HottestCollections data={data} />
       <CallToAction data={data} />
       <FeaturedVillasSection data={data} />
       <VillasForXGrid data={data} />
@@ -284,29 +284,40 @@ function USPSection({ data }: { data: HomePageData }) {
   const usps = data.usps || defaultData.usps || [];
 
   return (
-    <section className="py-12 bg-white">
-      <div className="max-w-7xl mx-auto px-6">
-        <div className="text-center mb-8">
-          <h3 className="text-2xl font-serif text-vintage-green italic">
+    <section className="py-8 md:py-12 bg-white">
+      <div className="max-w-7xl mx-auto px-4 md:px-6">
+        <div className="text-center mb-6 md:mb-8">
+          <h3 className="text-xl md:text-2xl font-serif text-vintage-green italic">
             {data.uspSectionTitle || 'Why book with Vintage?'}
           </h3>
         </div>
-        <div className="grid md:grid-cols-3 gap-16">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-16">
           {usps.map((usp) => (
             <div key={usp._key} className="text-center group">
-              <div className="mb-6 flex justify-center transform transition-transform group-hover:scale-110 duration-500">
-                {iconMap[usp.icon || 'star'] || iconMap['star']}
+              <div className="mb-3 md:mb-6 flex justify-center transform transition-transform group-hover:scale-110 duration-500">
+                <div className="md:hidden">
+                  {iconMap[usp.icon || 'star'] ? (
+                    <div className="[&>svg]:w-8 [&>svg]:h-8">
+                      {iconMap[usp.icon || 'star']}
+                    </div>
+                  ) : (
+                    iconMap['star']
+                  )}
+                </div>
+                <div className="hidden md:block">
+                  {iconMap[usp.icon || 'star'] || iconMap['star']}
+                </div>
               </div>
-              <h4 className="text-xl font-serif mb-4">{usp.title}</h4>
+              <h4 className="text-sm md:text-xl font-serif mb-2 md:mb-4">{usp.title}</h4>
               {usp.description && (
-                <p className="text-gray-500 text-sm leading-relaxed mb-6">
+                <p className="text-gray-500 text-xs md:text-sm leading-relaxed mb-3 md:mb-6 line-clamp-3 md:line-clamp-none">
                   {usp.description}
                 </p>
               )}
               {usp.linkUrl && (
                 <Link
                   href={usp.linkUrl}
-                  className="text-xs font-bold uppercase tracking-widest border-b border-gray-300 pb-1 hover:border-vintage-green transition-colors"
+                  className="text-[10px] md:text-xs font-bold uppercase tracking-widest border-b border-gray-300 pb-1 hover:border-vintage-green transition-colors"
                 >
                   {usp.linkText || 'Learn More'}
                 </Link>
@@ -403,7 +414,7 @@ function CallToAction({ data }: { data: HomePageData }) {
   const phoneNumber = data.ctaPhoneNumber || '+441954261431';
 
   return (
-    <section className="relative h-[400px] flex items-center justify-center overflow-hidden">
+    <section className="relative h-[360px] md:h-[400px] flex items-center justify-center overflow-hidden">
       <div
         className="absolute inset-0 bg-cover bg-fixed bg-center"
         style={{ backgroundImage: `url('${bgImageUrl}')` }}
@@ -411,28 +422,29 @@ function CallToAction({ data }: { data: HomePageData }) {
         <div className="absolute inset-0 bg-vintage-green/80"></div>
       </div>
 
-      <div className="relative z-10 text-white text-center max-w-4xl px-6">
-        <div className="mb-6 flex justify-center opacity-40">
-          <Phone size={80} className="transform -rotate-12" />
+      <div className="relative z-10 text-white text-center max-w-4xl px-6 scale-90 md:scale-100">
+        <div className="mb-4 md:mb-6 flex justify-center opacity-40">
+          <Phone size={60} className="md:hidden transform -rotate-12" />
+          <Phone size={80} className="hidden md:block transform -rotate-12" />
         </div>
-        <h2 className="text-3xl md:text-5xl font-serif mb-6">
+        <h2 className="text-2xl md:text-5xl font-serif mb-4 md:mb-6">
           {data.ctaTitle || 'Book online or call... 01954 261 431'}
         </h2>
         {data.ctaDescription && (
-          <p className="text-sm md:text-base font-light mb-10 opacity-80 max-w-2xl mx-auto">
+          <p className="text-xs md:text-base font-light mb-6 md:mb-10 opacity-80 max-w-2xl mx-auto">
             {data.ctaDescription}
           </p>
         )}
-        <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
+        <div className="flex flex-col sm:flex-row justify-center items-center gap-3 md:gap-4">
           <a
             href={`tel:${phoneNumber}`}
-            className="bg-white text-vintage-green px-12 py-3 text-xs font-bold tracking-widest uppercase hover:bg-black hover:text-white transition-all w-full sm:w-auto"
+            className="bg-white text-vintage-green px-10 md:px-12 py-2.5 md:py-3 text-xs font-bold tracking-widest uppercase hover:bg-black hover:text-white transition-all w-full sm:w-auto"
           >
             {data.ctaPrimaryButtonText || 'CALL US'}
           </a>
           <Link
             href={data.ctaSecondaryButtonLink || '/contact'}
-            className="border border-white text-white px-12 py-3 text-xs font-bold tracking-widest uppercase hover:bg-white hover:text-vintage-green transition-all w-full sm:w-auto"
+            className="border border-white text-white px-10 md:px-12 py-2.5 md:py-3 text-xs font-bold tracking-widest uppercase hover:bg-white hover:text-vintage-green transition-all w-full sm:w-auto"
           >
             {data.ctaSecondaryButtonText || 'EMAIL US'}
           </Link>

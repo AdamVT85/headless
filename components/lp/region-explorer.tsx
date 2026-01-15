@@ -6,9 +6,10 @@
  * A client-side component that provides tabbed navigation for exploring
  * different regions within a country. Clicking a region tab updates the
  * spotlight content instantly without page reload.
+ * Supports swipe gestures on touch devices.
  */
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 
@@ -51,7 +52,7 @@ const REGION_DATA: Record<string, { desc: string; img: string }> = {
   // Croatia
   'Dubrovnik': {
     desc: 'The "Pearl of the Adriatic" needs no introduction. This UNESCO World Heritage city offers stunning architecture and a dramatic coastal setting. Stay in a luxury villa near Dubrovnik and explore the city\'s ancient walls, island-hop to nearby Elaphiti Islands, or simply enjoy the crystal-clear waters.',
-    img: 'https://images.unsplash.com/photo-1555990538-1bf27e9b7558?auto=format&fit=crop&w=1200&q=80'
+    img: 'https://images.unsplash.com/photo-1590001155093-a3c66ab0c3ff?auto=format&fit=crop&w=1200&q=80'
   },
   'Istria': {
     desc: 'Often called "the new Tuscany," Istria combines Italian influence with Croatian authenticity. Rolling hills, truffle forests, and charming hilltop towns await. Enjoy world-class olive oil and wine, explore Roman ruins in Pula, or swim in the blue waters of the Adriatic.',
@@ -164,6 +165,76 @@ interface RegionExplorerProps {
 
 export function RegionExplorer({ country, regions }: RegionExplorerProps) {
   const [activeRegion, setActiveRegion] = useState(regions[0] || 'Unknown');
+  const touchStartX = useRef<number | null>(null);
+  const touchEndX = useRef<number | null>(null);
+  const tabContainerRef = useRef<HTMLDivElement>(null);
+  const tabRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+
+  // Minimum swipe distance to trigger navigation (in pixels)
+  const minSwipeDistance = 50;
+
+  // Scroll the tab into view when activeRegion changes
+  useEffect(() => {
+    const activeButton = tabRefs.current[activeRegion];
+    const container = tabContainerRef.current;
+
+    if (activeButton && container) {
+      const containerRect = container.getBoundingClientRect();
+      const buttonRect = activeButton.getBoundingClientRect();
+
+      // Calculate if button is outside visible area
+      const isLeftOfView = buttonRect.left < containerRect.left;
+      const isRightOfView = buttonRect.right > containerRect.right;
+
+      if (isLeftOfView || isRightOfView) {
+        // Scroll to center the button in the container
+        const scrollLeft = activeButton.offsetLeft - (container.offsetWidth / 2) + (activeButton.offsetWidth / 2);
+        container.scrollTo({ left: scrollLeft, behavior: 'smooth' });
+      }
+    }
+  }, [activeRegion]);
+
+  // Navigate to next/previous region
+  const navigateRegion = (direction: 'next' | 'prev') => {
+    const currentIndex = regions.indexOf(activeRegion);
+    let newIndex: number;
+
+    if (direction === 'next') {
+      newIndex = currentIndex < regions.length - 1 ? currentIndex + 1 : 0;
+    } else {
+      newIndex = currentIndex > 0 ? currentIndex - 1 : regions.length - 1;
+    }
+
+    setActiveRegion(regions[newIndex]);
+  };
+
+  // Touch event handlers
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.targetTouches[0].clientX;
+    touchEndX.current = null;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    touchEndX.current = e.targetTouches[0].clientX;
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStartX.current || !touchEndX.current) return;
+
+    const distance = touchStartX.current - touchEndX.current;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+
+    if (isLeftSwipe) {
+      navigateRegion('next');
+    } else if (isRightSwipe) {
+      navigateRegion('prev');
+    }
+
+    // Reset values
+    touchStartX.current = null;
+    touchEndX.current = null;
+  };
 
   // Helper to get content safely with fallback
   const getContent = (regionName: string) => {
@@ -184,10 +255,14 @@ export function RegionExplorer({ country, regions }: RegionExplorerProps) {
     <section className="bg-[#F3F0E9]">
       {/* Tab Navigation */}
       <div className="flex justify-center border-b border-gray-300">
-        <div className="flex space-x-4 md:space-x-12 px-4 pt-8 pb-4 overflow-x-auto">
+        <div
+          ref={tabContainerRef}
+          className="flex space-x-4 md:space-x-12 px-4 pt-8 pb-4 overflow-x-auto scroll-smooth"
+        >
           {regions.map((region) => (
             <button
               key={region}
+              ref={(el) => { tabRefs.current[region] = el; }}
               onClick={() => setActiveRegion(region)}
               className={`text-sm font-serif uppercase tracking-widest pb-4 transition-all whitespace-nowrap ${
                 activeRegion === region
@@ -201,8 +276,13 @@ export function RegionExplorer({ country, regions }: RegionExplorerProps) {
         </div>
       </div>
 
-      {/* Spotlight Content */}
-      <div className="flex flex-col md:flex-row h-auto md:h-[500px]">
+      {/* Spotlight Content - Swipeable */}
+      <div
+        className="flex flex-col md:flex-row h-auto md:h-[500px]"
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
         {/* Image Side */}
         <div className="w-full md:w-1/2 h-[300px] md:h-full relative bg-gray-200 overflow-hidden">
           <Image
@@ -212,12 +292,6 @@ export function RegionExplorer({ country, regions }: RegionExplorerProps) {
             fill
             className="object-cover transition-opacity duration-500 animate-fadeIn"
           />
-          <Link
-            href={`/villas-in-${toSlug(country)}/${toSlug(activeRegion)}`}
-            className="absolute bottom-4 left-4 border border-white px-4 py-2 text-white text-xs cursor-pointer hover:bg-white/20 transition-colors uppercase tracking-widest"
-          >
-            View Galleries
-          </Link>
         </div>
 
         {/* Text Side */}
