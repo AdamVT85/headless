@@ -274,7 +274,9 @@ export function HeroSearch({ initialLocation }: HeroSearchProps = {}) {
     const params = new URLSearchParams();
 
     if (location) {
-      params.set('loc', location.value);
+      // Use label for search (matches actual Salesforce town/region names)
+      // Slug is only used for URL routing (/villas-in-{slug})
+      params.set('loc', location.label);
       params.set('type', location.type);
     }
 
