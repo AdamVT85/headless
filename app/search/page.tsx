@@ -1,11 +1,7 @@
 /**
- * SEARCH RESULTS PAGE - RALPH AUDIT COMPLIANT
+ * SEARCH RESULTS PAGE - WITH MAP VIEW
  * Filters villas based on URL parameters from hero search
- *
- * RALPH AUDITS PASSED:
- * ✓ URL Parameter Parsing: Reads loc, q, start, end, adults, children
- * ✓ Graceful Degradation: Shows all villas if no params
- * ✓ Brand Compliance: Olive/Terracotta colors
+ * Features: Grid/List toggle, Map view with 50/50 split, marker interactions
  */
 
 'use client';
@@ -13,11 +9,27 @@
 // Force dynamic rendering (required for useSearchParams)
 export const dynamic = 'force-dynamic';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, Suspense, useCallback, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
+import dynamicImport from 'next/dynamic';
+import { Map, LayoutGrid } from 'lucide-react';
 import { searchVillas } from '@/lib/search-client';
 import { MockVilla } from '@/lib/mock-db';
 import { SearchParams } from '@/types/search';
+import { VillaCard, VillaCardSkeleton, VillaCardGrid } from '@/components/ui/villa-card';
+import { VillaCardRow, VillaCardRowSkeleton } from '@/components/search/villa-card-row';
+import { InteractiveFilterPills } from '@/components/search/interactive-filter-pills';
+import { cn } from '@/lib/utils';
+
+// Dynamic import for MapView (client-side only, no SSR)
+const MapView = dynamicImport(() => import('@/components/search/map-view'), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-full flex items-center justify-center bg-clay-100">
+      <div className="text-olive animate-pulse">Loading map...</div>
+    </div>
+  ),
+});
 
 interface SearchResult {
   villas: MockVilla[];
@@ -32,13 +44,24 @@ interface SearchResult {
     children?: number;
   };
 }
-import { VillaCard, VillaCardSkeleton, VillaCardGrid } from '@/components/ui/villa-card';
-import { InteractiveFilterPills } from '@/components/search/interactive-filter-pills';
 
 function SearchPageContent() {
   const searchParams = useSearchParams();
   const [results, setResults] = useState<SearchResult | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isMapView, setIsMapView] = useState(false);
+  const [hoveredVillaId, setHoveredVillaId] = useState<string | null>(null);
+  const [highlightFromMap, setHighlightFromMap] = useState(false);
+  const listRef = useRef<HTMLDivElement>(null);
+
+  // Detect mobile
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Parse URL parameters
   useEffect(() => {
@@ -46,21 +69,16 @@ function SearchPageContent() {
       setLoading(true);
 
       try {
-        // RALPH AUDIT: URL Parameter Parsing
-        // Support multiple location param names: loc, location, region, q
         const loc = searchParams.get('loc') || searchParams.get('location') || searchParams.get('region') || searchParams.get('q') || undefined;
-        const type = searchParams.get('type') || undefined; // 'country' or 'region' or undefined
+        const type = searchParams.get('type') || undefined;
         const country = searchParams.get('country') || undefined;
         const start = searchParams.get('start') || undefined;
         const end = searchParams.get('end') || undefined;
         const adults = searchParams.get('adults') ? parseInt(searchParams.get('adults')!) : undefined;
         const children = searchParams.get('children') ? parseInt(searchParams.get('children')!) : undefined;
 
-        // Map to SearchParams structure - only include defined values
-        // This avoids serialization issues with undefined properties
         const params: SearchParams = {};
 
-        // PHASE 59: Handle type parameter - when type=country, use loc as country filter
         if (type === 'country' && loc) {
           params.country = loc;
         } else if (loc) {
@@ -70,15 +88,8 @@ function SearchPageContent() {
         if (start && end) params.dates = { startDate: start, endDate: end };
         if (adults || children) params.guests = { adults, children };
 
-        console.log('[SEARCH PAGE] Parsed loc value:', loc);
-        console.log('[SEARCH PAGE] Parsed country value:', country);
-        console.log('[SEARCH PAGE] Parsed params:', params);
-        console.log('[SEARCH PAGE] Params JSON:', JSON.stringify(params));
-
-        // Call search function
         const villas = await searchVillas(params);
 
-        // Wrap results in expected structure
         setResults({
           villas,
           totalCount: villas.length,
@@ -92,11 +103,8 @@ function SearchPageContent() {
           },
         });
       } catch (err) {
-        // PHASE 13 CLEANUP: Log error but continue gracefully
         console.error('[SEARCH PAGE] Search failed:', err);
-        console.error('[SEARCH PAGE] Stack:', err instanceof Error ? err.stack : 'No stack');
 
-        // Set empty results to show standard "No villas found" message
         const loc = searchParams.get('loc') || searchParams.get('location') || searchParams.get('region') || searchParams.get('q') || undefined;
         const start = searchParams.get('start') || undefined;
         const end = searchParams.get('end') || undefined;
@@ -123,29 +131,36 @@ function SearchPageContent() {
     performSearch();
   }, [searchParams]);
 
-  // Format display text for filters
-  const getLocationText = () => {
-    if (results?.filters?.loc) {
-      return results.filters.loc;
-    }
-    if (results?.filters?.q) {
-      return results.filters.q;
-    }
-    return 'All Locations';
+  // Handle hover from list - update map
+  const handleListHover = useCallback((villaId: string | null) => {
+    setHighlightFromMap(false);
+    setHoveredVillaId(villaId);
+  }, []);
+
+  // Handle hover from map - update list and scroll
+  const handleMapHover = useCallback((villaId: string | null) => {
+    setHighlightFromMap(true);
+    setHoveredVillaId(villaId);
+  }, []);
+
+  // Handle marker click on desktop - scroll to villa in list
+  const handleMarkerClick = useCallback((villaId: string) => {
+    setHighlightFromMap(true);
+    setHoveredVillaId(villaId);
+    // Brief highlight effect
+    setTimeout(() => {
+      setHoveredVillaId(null);
+    }, 2000);
+  }, []);
+
+  // Toggle map view
+  const toggleMapView = () => {
+    setIsMapView(!isMapView);
   };
 
-  const getGuestText = () => {
-    const adults = results?.filters?.adults || 0;
-    const children = results?.filters?.children || 0;
-    const total = adults + children;
-    return total > 0 ? `${total} ${total === 1 ? 'Guest' : 'Guests'}` : 'Any Guests';
-  };
-
-  const getDateText = () => {
-    if (results?.filters?.start && results?.filters?.end) {
-      return `${results.filters.start} to ${results.filters.end}`;
-    }
-    return 'Any Dates';
+  // Close mobile map
+  const closeMobileMap = () => {
+    setIsMapView(false);
   };
 
   return (
@@ -153,79 +168,210 @@ function SearchPageContent() {
       {/* Header */}
       <section className="bg-white border-b border-stone-200">
         <div className="container mx-auto px-6 py-8">
-          <h1 className="font-serif text-4xl font-light text-olive mb-3">
-            Search Results
-          </h1>
-          <p className="font-sans text-stone-600 text-lg">
-            Discover luxury villas matching your criteria
-          </p>
+          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+            <div>
+              <h1 className="font-serif text-4xl font-light text-olive mb-3">
+                Search Results
+              </h1>
+              <p className="font-sans text-stone-600 text-lg">
+                Discover luxury villas matching your criteria
+              </p>
+            </div>
+          </div>
 
-          {/* Interactive Filter Pills - renders based on URL params for immediate updates */}
-          <InteractiveFilterPills />
+          {/* Filter Pills and Map Toggle */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mt-6">
+            <InteractiveFilterPills />
+
+            {/* Map View Toggle */}
+            <button
+              onClick={toggleMapView}
+              className={cn(
+                'flex items-center gap-2 px-4 py-2 rounded-sm text-sm font-medium transition-all',
+                'border border-stone-300 hover:border-olive',
+                isMapView
+                  ? 'bg-olive text-white border-olive'
+                  : 'bg-white text-olive hover:bg-olive-50'
+              )}
+            >
+              {isMapView ? (
+                <>
+                  <LayoutGrid size={18} />
+                  <span>Grid View</span>
+                </>
+              ) : (
+                <>
+                  <Map size={18} />
+                  <span>Map View</span>
+                </>
+              )}
+            </button>
+          </div>
         </div>
       </section>
 
       {/* Results Section */}
-      <section className="container mx-auto px-6 py-12">
-        {/* Results Count */}
-        {results && !loading && (
-          <div className="mb-8">
-            <p className="font-sans text-stone-700">
-              <span className="font-bold text-olive">{results?.totalCount}</span>{' '}
-              {results?.totalCount === 1 ? 'villa' : 'villas'} found
-            </p>
-          </div>
-        )}
-
-        {/* Loading State */}
-        {loading && (
-          <VillaCardGrid>
-            {Array.from({ length: 6 }).map((_, i) => (
-              <VillaCardSkeleton key={i} />
-            ))}
-          </VillaCardGrid>
-        )}
-
-        {/* Results Grid */}
-        {!loading && results && (
-          <>
-            {results.villas?.length > 0 ? (
-              <VillaCardGrid>
-                {results.villas?.map((villa) => (
-                  <VillaCard
-                    key={villa.id}
-                    id={villa.id}
-                    slug={villa.slug}
-                    title={villa.title}
-                    region={villa.region}
-                    heroImageUrl={villa.heroImageUrl}
-                    pricePerWeek={villa.pricePerWeek}
-                    maxGuests={villa.maxGuests}
-                    bedrooms={villa.bedrooms}
-                  />
-                ))}
-              </VillaCardGrid>
-            ) : (
-              <div className="bg-stone-100 border border-stone-200 rounded-lg p-12 text-center">
-                <h2 className="font-serif text-2xl font-light text-olive mb-3">
-                  No villas found
-                </h2>
-                <p className="text-stone-600 mb-6">
-                  We couldn't find any villas matching your criteria. Try adjusting your search parameters.
-                </p>
-                <div className="space-y-2 text-sm text-stone-500">
-                  <p>Suggestions:</p>
-                  <ul className="list-disc list-inside">
-                    <li>Try searching for a different location</li>
-                    <li>Adjust your guest count or date range</li>
-                    <li>Browse all available villas on the homepage</li>
-                  </ul>
+      {isMapView && !isMobile ? (
+        // Desktop Map View - 50/50 Split
+        <section className="flex h-[calc(100vh-220px)]">
+          {/* Left: Villa List */}
+          <div
+            ref={listRef}
+            className="w-1/2 overflow-y-auto border-r border-stone-200 bg-white"
+          >
+            <div className="p-4">
+              {/* Results Count */}
+              {results && !loading && (
+                <div className="mb-4 pb-4 border-b border-stone-100">
+                  <p className="font-sans text-stone-700">
+                    <span className="font-bold text-olive">{results?.totalCount}</span>{' '}
+                    {results?.totalCount === 1 ? 'villa' : 'villas'} found
+                  </p>
                 </div>
-              </div>
-            )}
-          </>
-        )}
-      </section>
+              )}
+
+              {/* Loading State */}
+              {loading && (
+                <div className="space-y-4">
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <VillaCardRowSkeleton key={i} />
+                  ))}
+                </div>
+              )}
+
+              {/* Villa List */}
+              {!loading && results && results.villas?.length > 0 && (
+                <div className="space-y-4">
+                  {results.villas.map((villa) => (
+                    <VillaCardRow
+                      key={villa.id}
+                      villa={villa}
+                      isHighlighted={hoveredVillaId === villa.id}
+                      onHover={handleListHover}
+                      shouldScrollIntoView={highlightFromMap}
+                      scrollContainerRef={listRef}
+                    />
+                  ))}
+                </div>
+              )}
+
+              {/* No Results */}
+              {!loading && results && results.villas?.length === 0 && (
+                <div className="text-center py-12">
+                  <p className="text-stone-600">No villas found matching your criteria.</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Right: Map */}
+          <div className="w-1/2 h-full">
+            <MapView
+              villas={results?.villas || []}
+              hoveredVillaId={hoveredVillaId}
+              onMarkerHover={handleMapHover}
+              onMarkerClick={handleMarkerClick}
+              isMobile={false}
+            />
+          </div>
+        </section>
+      ) : isMapView && isMobile ? (
+        // Mobile Map View - Full Screen Overlay
+        <div className="fixed inset-0 z-50 bg-white">
+          {/* Mobile Map Header */}
+          <div className="absolute top-0 left-0 right-0 z-10 bg-white border-b border-stone-200 px-4 py-3 flex items-center justify-between">
+            <div>
+              <p className="font-serif text-lg text-olive">Map View</p>
+              {results && (
+                <p className="text-xs text-stone-500">
+                  {results.totalCount} {results.totalCount === 1 ? 'villa' : 'villas'}
+                </p>
+              )}
+            </div>
+            <button
+              onClick={closeMobileMap}
+              className="flex items-center gap-2 px-4 py-2 bg-olive text-white rounded-sm text-sm"
+            >
+              <LayoutGrid size={16} />
+              <span>List</span>
+            </button>
+          </div>
+
+          {/* Full Screen Map */}
+          <div className="h-full pt-16">
+            <MapView
+              villas={results?.villas || []}
+              hoveredVillaId={hoveredVillaId}
+              onMarkerHover={handleMapHover}
+              onMarkerClick={handleMarkerClick}
+              isMobile={true}
+            />
+          </div>
+        </div>
+      ) : (
+        // Standard Grid View
+        <section className="container mx-auto px-6 py-12">
+          {/* Results Count */}
+          {results && !loading && (
+            <div className="mb-8">
+              <p className="font-sans text-stone-700">
+                <span className="font-bold text-olive">{results?.totalCount}</span>{' '}
+                {results?.totalCount === 1 ? 'villa' : 'villas'} found
+              </p>
+            </div>
+          )}
+
+          {/* Loading State */}
+          {loading && (
+            <VillaCardGrid>
+              {Array.from({ length: 6 }).map((_, i) => (
+                <VillaCardSkeleton key={i} />
+              ))}
+            </VillaCardGrid>
+          )}
+
+          {/* Results Grid */}
+          {!loading && results && (
+            <>
+              {results.villas?.length > 0 ? (
+                <VillaCardGrid>
+                  {results.villas?.map((villa) => (
+                    <VillaCard
+                      key={villa.id}
+                      id={villa.id}
+                      slug={villa.slug}
+                      title={villa.title}
+                      region={villa.region}
+                      town={villa.town}
+                      heroImageUrl={villa.heroImageUrl}
+                      pricePerWeek={villa.pricePerWeek}
+                      maxGuests={villa.maxGuests}
+                      bedrooms={villa.bedrooms}
+                    />
+                  ))}
+                </VillaCardGrid>
+              ) : (
+                <div className="bg-stone-100 border border-stone-200 rounded-lg p-12 text-center">
+                  <h2 className="font-serif text-2xl font-light text-olive mb-3">
+                    No villas found
+                  </h2>
+                  <p className="text-stone-600 mb-6">
+                    We couldn't find any villas matching your criteria. Try adjusting your search parameters.
+                  </p>
+                  <div className="space-y-2 text-sm text-stone-500">
+                    <p>Suggestions:</p>
+                    <ul className="list-disc list-inside">
+                      <li>Try searching for a different location</li>
+                      <li>Adjust your guest count or date range</li>
+                      <li>Browse all available villas on the homepage</li>
+                    </ul>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </section>
+      )}
     </main>
   );
 }

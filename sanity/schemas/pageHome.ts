@@ -87,6 +87,58 @@ export default defineType({
       group: 'hero',
     }),
 
+    defineField({
+      name: 'heroAwardBadges',
+      title: 'Award Badges',
+      type: 'array',
+      group: 'hero',
+      of: [
+        {
+          type: 'object',
+          name: 'awardBadge',
+          title: 'Award Badge',
+          fields: [
+            {
+              name: 'image',
+              title: 'Badge Image',
+              type: 'image',
+              options: { hotspot: true },
+              validation: (Rule: any) => Rule.required(),
+              description: 'Award or certification badge image (recommended: transparent PNG)',
+            },
+            {
+              name: 'alt',
+              title: 'Alt Text',
+              type: 'string',
+              description: 'Accessibility description of the badge',
+              validation: (Rule: any) => Rule.required(),
+            },
+            {
+              name: 'link',
+              title: 'Link URL',
+              type: 'string',
+              description: 'Optional link when badge is clicked',
+            },
+          ],
+          preview: {
+            select: {
+              alt: 'alt',
+              media: 'image',
+            },
+            prepare(selection) {
+              const { alt, media } = selection;
+              return {
+                title: alt || 'Award Badge',
+                media,
+              };
+            },
+          },
+        },
+      ],
+      description: 'Award badges displayed in the bottom-left of the hero section (recommended: 2 badges)',
+      validation: (Rule) => Rule.max(4).warning('Consider showing 2-3 badges for best layout'),
+    }),
+
     // === USP SECTION ===
     defineField({
       name: 'uspSectionTitle',

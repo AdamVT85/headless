@@ -16,6 +16,7 @@ export interface VillaCardProps {
   slug: string;
   title: string;
   region: string;
+  town?: string;
   heroImageUrl?: string | null;
   pricePerWeek?: number | null;
   maxGuests?: number;
@@ -32,6 +33,7 @@ export function VillaCard({
   slug,
   title,
   region,
+  town,
   heroImageUrl,
   pricePerWeek,
   maxGuests,
@@ -70,10 +72,10 @@ export function VillaCard({
           }}
         />
 
-        {/* Minimal overlay badge */}
+        {/* Minimal overlay badge - show town, fallback to region */}
         <div className="absolute top-3 right-3">
           <span className="inline-block rounded-sm bg-white/90 px-3 py-1 text-xs font-semibold text-olive backdrop-blur-sm">
-            {region}
+            {town || region}
           </span>
         </div>
       </div>

@@ -18,6 +18,7 @@ export interface Destination {
   id: string;
   name: string;
   imageUrl: string;
+  countryId: string;
 }
 
 export interface Collection {
@@ -37,9 +38,9 @@ export interface NavigationData {
 
 export const MENU_DATA: NavigationData = {
   popularDestinations: [
-    { id: '1', name: 'Catalunya', imageUrl: 'https://images.unsplash.com/photo-1539037116277-4db20889f2d4?w=400&h=200&fit=crop&q=80' },
-    { id: '2', name: 'Tuscany', imageUrl: 'https://images.unsplash.com/photo-1534445867742-43195f401b6c?w=400&h=200&fit=crop&q=80' },
-    { id: '3', name: 'Crete', imageUrl: 'https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=400&h=200&fit=crop&q=80' },
+    { id: 'catalunya', name: 'Catalunya', countryId: 'spain', imageUrl: 'https://images.unsplash.com/photo-1539037116277-4db20889f2d4?w=400&h=200&fit=crop&q=80' },
+    { id: 'tuscany', name: 'Tuscany', countryId: 'italy', imageUrl: 'https://images.unsplash.com/photo-1534445867742-43195f401b6c?w=400&h=200&fit=crop&q=80' },
+    { id: 'crete', name: 'Crete', countryId: 'greece', imageUrl: 'https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=400&h=200&fit=crop&q=80' },
   ],
   countries: [
     {

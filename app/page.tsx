@@ -30,6 +30,7 @@ import {
   type Testimonial,
   type FeaturedVilla,
   type DestinationCountry,
+  type AwardBadge,
 } from '@/lib/queries/homepage';
 import { getVillaById } from '@/lib/crm-client';
 
@@ -233,19 +234,33 @@ function Hero({ data }: { data: HomePageData }) {
         <HeroSearch />
       </div>
 
-      {/* Trust Badges */}
-      <div className="absolute bottom-8 left-8 hidden lg:flex space-x-4">
-        <div className="bg-white/90 p-2 rounded">
-          <div className="h-10 w-20 bg-gray-200 opacity-70 rounded flex items-center justify-center text-xs">
-            Award 1
-          </div>
+      {/* Award Badges */}
+      {data.heroAwardBadges && data.heroAwardBadges.length > 0 && (
+        <div className="absolute bottom-8 left-8 hidden lg:flex space-x-6">
+          {data.heroAwardBadges.map((badge) => {
+            const badgeImageUrl = getImageUrl(badge.image, 400);
+            if (!badgeImageUrl) return null;
+
+            const badgeContent = (
+              <Image
+                src={badgeImageUrl}
+                alt={badge.alt}
+                width={180}
+                height={90}
+                className="h-[90px] w-auto object-contain"
+              />
+            );
+
+            return badge.link ? (
+              <Link key={badge._key} href={badge.link} target="_blank" rel="noopener noreferrer">
+                {badgeContent}
+              </Link>
+            ) : (
+              <div key={badge._key}>{badgeContent}</div>
+            );
+          })}
         </div>
-        <div className="bg-white/90 p-2 rounded">
-          <div className="h-10 w-20 bg-gray-200 opacity-70 rounded flex items-center justify-center text-xs">
-            Award 2
-          </div>
-        </div>
-      </div>
+      )}
 
       <div className="absolute bottom-8 right-8 hidden lg:block">
         <div className="bg-white/90 p-4 rounded flex items-center space-x-4">

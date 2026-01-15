@@ -64,6 +64,10 @@ export interface SalesforceVillaRecord {
   P_First_Para__c?: string; // Primary description (HTML)
   P_Facility_Summary__c?: string; // Facilities summary (HTML)
   P_Follow_on_text__c?: string; // Additional content (HTML)
+
+  // Map coordinates (Salesforce may return as string or number)
+  P_Map_Loc_Lat__c?: number | string; // Latitude
+  P_Map_Loc_Long__c?: number | string; // Longitude
 }
 
 /**
@@ -245,7 +249,9 @@ export async function getAllVillas(): Promise<MockVilla[]> {
         P_Country__c,
         P_Region__c,
         P_Board_Group_Name__c,
-        P_Address_Line_1__c
+        P_Address_Line_1__c,
+        P_Map_Loc_Lat__c,
+        P_Map_Loc_Long__c
       FROM Property__c
       WHERE P_Archive_Suppress__c = false`
     ).execute({ autoFetch: true, maxFetch: 5000 });
@@ -379,7 +385,9 @@ export async function getVillaById(idOrSlug: string): Promise<MockVilla | null> 
       Max_Guests__c,
       Bathrooms__c,
       Price_Per_Week__c,
-      X2026_Prices_Loaded__c
+      X2026_Prices_Loaded__c,
+      P_Map_Loc_Lat__c,
+      P_Map_Loc_Long__c
     FROM Property__c
     WHERE Id = '${idOrSlug}' OR Slug__c = '${idOrSlug}'
     LIMIT 1`;

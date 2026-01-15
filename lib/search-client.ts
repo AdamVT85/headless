@@ -283,6 +283,10 @@ export async function searchVillas(params: SearchParams): Promise<MockVilla[]> {
         country: v.country,
         town: v.town,
         heroImageUrl: v.heroImageUrl,
+
+        // Map coordinates
+        latitude: v.latitude,
+        longitude: v.longitude,
         galleryImages: v.galleryImages,
         description: '', // ⚠️ STRIPPED: Not needed for grid card
         amenities: [], // ⚠️ STRIPPED: Not needed for grid card

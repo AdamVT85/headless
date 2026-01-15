@@ -226,6 +226,7 @@ export default async function RegionPage({ params }: RegionPageProps) {
                   slug={villa.slug}
                   title={villa.title}
                   region={villa.region}
+                  town={villa.town}
                   heroImageUrl={villa.heroImageUrl}
                   pricePerWeek={villa.pricePerWeek}
                   maxGuests={villa.maxGuests}

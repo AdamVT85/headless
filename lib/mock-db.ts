@@ -32,6 +32,10 @@ export interface MockVilla {
   facilitySummary?: string; // P_Facility_Summary__c - Facilities description (HTML)
   followOnText?: string; // P_Follow_on_text__c - Additional text content (HTML)
 
+  // Map coordinates (can be string or number from Salesforce)
+  latitude?: number | string; // P_Map_Loc_Lat__c
+  longitude?: number | string; // P_Map_Loc_Long__c
+
   // Capacity
   maxGuests: number;
   bedrooms: number;

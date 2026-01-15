@@ -32,9 +32,9 @@ export default function VillaCard({
           alt={villa.title}
           className="w-full h-full object-cover"
         />
-        {/* Region Badge */}
+        {/* Location Badge - show town, fallback to region */}
         <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-semibold text-gray-800">
-          📍 {villa.region}
+          📍 {villa.town || villa.region}
         </div>
       </div>
 

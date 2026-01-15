@@ -673,6 +673,10 @@ export function mapCRMVillaToVilla(crmRecord: SalesforceVillaRecord): MockVilla 
     bedrooms: bedroomCount,
     bathrooms: bathrooms,
 
+    // Map coordinates (keep as-is, conversion happens in MapView)
+    latitude: crmRecord.P_Map_Loc_Lat__c ?? undefined,
+    longitude: crmRecord.P_Map_Loc_Long__c ?? undefined,
+
     // Commerce
     pricePerWeek: null, // Will be updated by getLowestPricesForVillas
     pricePerNight: null, // Will be updated by getLowestPricesForVillas
@@ -738,6 +742,14 @@ export function mapCRMVillasToVillas(
   const unknownCount = regionCounts['Unknown Region'] || 0;
   if (unknownCount > 0) {
     console.warn(`[Mapper] WARNING: ${unknownCount} villas have "Unknown Region"`);
+  }
+
+  // Count villas with coordinates
+  const villasWithCoords = mappedVillas.filter(v => v.latitude && v.longitude);
+  console.log(`[Mapper] ====== MAP COORDINATES ======`);
+  console.log(`[Mapper] Villas with coordinates: ${villasWithCoords.length} / ${mappedVillas.length}`);
+  if (villasWithCoords.length > 0) {
+    console.log(`[Mapper] Sample villa with coords: ${villasWithCoords[0].title} (${villasWithCoords[0].latitude}, ${villasWithCoords[0].longitude})`);
   }
 
   console.log('[Mapper] =========================================');

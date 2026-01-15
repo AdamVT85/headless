@@ -6,6 +6,13 @@
 import { client, urlFor } from '../sanity.client';
 
 // TypeScript types for homepage data
+export interface AwardBadge {
+  _key: string;
+  image: SanityImage;
+  alt: string;
+  link?: string;
+}
+
 export interface HomePageData {
   // Hero
   heroTitle: string;
@@ -14,6 +21,7 @@ export interface HomePageData {
   heroLocationLabel?: string;
   heroCtaText?: string;
   heroCtaLink?: string;
+  heroAwardBadges?: AwardBadge[];
 
   // USP Section
   uspSectionTitle?: string;
@@ -144,6 +152,12 @@ export const homepageQuery = `*[_type == "pageHome"][0]{
   heroLocationLabel,
   heroCtaText,
   heroCtaLink,
+  heroAwardBadges[]{
+    _key,
+    image,
+    alt,
+    link
+  },
 
   // USP Section
   uspSectionTitle,
