@@ -181,7 +181,7 @@ export function MapView({
             bounds.extend({ lat: villa.latitude, lng: villa.longitude });
           }
         });
-        map.fitBounds(bounds, { padding: 50 });
+        map.fitBounds(bounds, 50);
       }
       setMap(map);
     },
