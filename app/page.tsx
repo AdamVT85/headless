@@ -129,20 +129,20 @@ const fallbackImages = {
   ],
 };
 
-const defaultCollections = [
-  { _key: '1', title: 'Villas with a view', linkUrl: '/search' },
-  { _key: '2', title: 'Villas by the sea', linkUrl: '/search' },
-  { _key: '3', title: 'Villas in Tuscany', linkUrl: '/search' },
-  { _key: '4', title: 'Family-friendly villas', linkUrl: '/search' },
+const defaultCollections: Collection[] = [
+  { _key: '1', title: 'Villas with a view', linkUrl: '/search', image: undefined },
+  { _key: '2', title: 'Villas by the sea', linkUrl: '/search', image: undefined },
+  { _key: '3', title: 'Villas in Tuscany', linkUrl: '/search', image: undefined },
+  { _key: '4', title: 'Family-friendly villas', linkUrl: '/search', image: undefined },
 ];
 
-const defaultCategories = [
-  { _key: '1', title: 'Family-friendly villas', linkUrl: '/search' },
-  { _key: '2', title: 'Villas for couple', linkUrl: '/search' },
-  { _key: '3', title: 'Large villas', linkUrl: '/search' },
-  { _key: '4', title: 'Car not essential', linkUrl: '/search' },
-  { _key: '5', title: 'Villas near beaches', linkUrl: '/search' },
-  { _key: '6', title: 'Secluded villas', linkUrl: '/search' },
+const defaultCategories: VillaCategory[] = [
+  { _key: '1', title: 'Family-friendly villas', linkUrl: '/search', image: undefined },
+  { _key: '2', title: 'Villas for couple', linkUrl: '/search', image: undefined },
+  { _key: '3', title: 'Large villas', linkUrl: '/search', image: undefined },
+  { _key: '4', title: 'Car not essential', linkUrl: '/search', image: undefined },
+  { _key: '5', title: 'Villas near beaches', linkUrl: '/search', image: undefined },
+  { _key: '6', title: 'Secluded villas', linkUrl: '/search', image: undefined },
 ];
 
 export default async function HomePage() {
