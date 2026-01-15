@@ -318,7 +318,7 @@ function HottestCollections({ data }: { data: HomePageData }) {
         <h3 className="text-center font-serif text-2xl mb-12 italic">
           {data.collectionsSectionTitle || 'Our hottest collections'}
         </h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
           {collections.map((item, i) => {
             const imageUrl = getImageUrl(item.image, 500) || fallbackImages.collections[i % fallbackImages.collections.length];
 
@@ -326,7 +326,7 @@ function HottestCollections({ data }: { data: HomePageData }) {
               <Link
                 key={item._key}
                 href={item.linkUrl || '/search'}
-                className="relative group cursor-pointer overflow-hidden h-[450px] block"
+                className="relative group cursor-pointer overflow-hidden h-[200px] sm:h-[350px] lg:h-[450px] block"
               >
                 <div className="relative w-full h-full">
                   <Image
@@ -337,9 +337,9 @@ function HottestCollections({ data }: { data: HomePageData }) {
                   />
                 </div>
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
-                <div className="absolute bottom-10 left-0 w-full text-center px-4">
-                  <h4 className="text-white font-serif text-2xl mb-4">{item.title}</h4>
-                  <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 transform translate-y-2 group-hover:translate-y-0">
+                <div className="absolute bottom-4 sm:bottom-10 left-0 w-full text-center px-2 sm:px-4">
+                  <h4 className="text-white font-serif text-base sm:text-2xl mb-2 sm:mb-4">{item.title}</h4>
+                  <div className="hidden sm:block opacity-0 group-hover:opacity-100 transition-opacity duration-300 transform translate-y-2 group-hover:translate-y-0">
                     <span className="text-white text-[10px] uppercase tracking-[0.2em] border border-white/40 px-4 py-2 hover:bg-white hover:text-black transition-colors inline-block">
                       View All Villas
                     </span>

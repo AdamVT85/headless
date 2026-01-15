@@ -251,6 +251,13 @@ export function AvailabilityCalendar({
 
     // SCENARIO B: Start only (no end yet)
     if (rangeStart && !rangeEnd) {
+      // Toggle: Clicking on the same week deselects it
+      if (dateStr === rangeStart) {
+        console.log('[Calendar] Toggling off single week selection');
+        setRangeStart(null);
+        setRangeEnd(null);
+        return;
+      }
       // Clicking after start → Try to set end
       if (dateStr > rangeStart) {
         console.log('[Calendar] Attempting to set end from', rangeStart, 'to', dateStr);
@@ -263,9 +270,9 @@ export function AvailabilityCalendar({
           setRangeEnd(null);
         }
       }
-      // Clicking before or same as start → Reset to new start
+      // Clicking before start → Reset to new start
       else {
-        console.log('[Calendar] Clicked before/at start - resetting to', dateStr);
+        console.log('[Calendar] Clicked before start - resetting to', dateStr);
         setRangeStart(dateStr);
         setRangeEnd(null);
       }

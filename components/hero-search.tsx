@@ -12,7 +12,8 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { Search, MapPin, X, Calendar as CalendarIcon, Users, Minus, Plus, ChevronDown } from 'lucide-react';
 import { format } from 'date-fns';
@@ -31,14 +32,34 @@ interface LocationSelection {
 
 type ActiveStep = 'location' | 'dates' | 'guests' | null;
 
-export function HeroSearch() {
+interface HeroSearchProps {
+  initialLocation?: {
+    label: string;
+    value: string;
+    type: 'country' | 'region';
+  };
+}
+
+export function HeroSearch({ initialLocation }: HeroSearchProps = {}) {
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
+
+  // Mount check for portal (SSR safety)
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Wizard state - auto-advance through steps
   const [activeStep, setActiveStep] = useState<ActiveStep>(null);
 
-  // Master State
-  const [location, setLocation] = useState<LocationSelection | null>(null);
+  // Master State - initialize with provided location if available
+  const [location, setLocation] = useState<LocationSelection | null>(
+    initialLocation ? {
+      label: initialLocation.label,
+      value: initialLocation.value,
+      type: initialLocation.type,
+    } : null
+  );
   const [dates, setDates] = useState<DateSelection>({
     mode: 'specific',
     startDate: null,
@@ -53,6 +74,58 @@ export function HeroSearch() {
     children: 0,
     infants: 0,
   });
+
+  // Lock body scroll when modal is open (prevents header overlap on mobile)
+  useEffect(() => {
+    if (activeStep) {
+      // Save current scroll position
+      const scrollY = window.scrollY;
+      // Lock body completely
+      document.body.style.overflow = 'hidden';
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.left = '0';
+      document.body.style.right = '0';
+      document.body.style.width = '100%';
+      document.documentElement.style.overflow = 'hidden';
+    } else {
+      // Restore scroll position and unlock body
+      const scrollY = document.body.style.top;
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.left = '';
+      document.body.style.right = '';
+      document.body.style.width = '';
+      document.documentElement.style.overflow = '';
+      if (scrollY) {
+        window.scrollTo(0, parseInt(scrollY || '0') * -1);
+      }
+    }
+
+    return () => {
+      // Cleanup on unmount
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.left = '';
+      document.body.style.right = '';
+      document.body.style.width = '';
+      document.documentElement.style.overflow = '';
+    };
+  }, [activeStep]);
+
+  // Handle guest picker "Done" - auto-search if location or dates are selected
+  const handleGuestsDone = () => {
+    setActiveStep(null);
+    // Auto-search if location OR dates are selected
+    if (location || (dates.startDate && dates.endDate) || (dates.rangeStart && dates.rangeEnd)) {
+      // Small delay to allow modal to close first
+      setTimeout(() => {
+        handleSearch();
+      }, 100);
+    }
+  };
 
   // Handle date changes with auto-advance
   const handleDateChange = (newDates: DateSelection) => {
@@ -349,19 +422,17 @@ export function HeroSearch() {
         </div>
       </div>
 
-      {/* RALPH AUDIT: BREAKOUT MODALS - Fixed positioning with z-[9999] */}
-
-      {/* Location Modal */}
-      {activeStep === 'location' && (
+      {/* RALPH AUDIT: BREAKOUT MODALS - Rendered via Portal to escape transform containers */}
+      {mounted && activeStep === 'location' && createPortal(
         <>
           {/* Backdrop */}
           <div
-            className="fixed inset-0 bg-black/20 z-[9990]"
+            className="fixed inset-0 bg-black/20 z-[99990]"
             onClick={() => setActiveStep(null)}
           />
 
           {/* Desktop: Centered Command Palette */}
-          <div className="hidden md:block fixed top-1/4 left-1/2 -translate-x-1/2 w-[800px] max-w-[90vw] max-h-[80vh] bg-white z-[9999] shadow-2xl rounded-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+          <div className="hidden md:block fixed top-1/4 left-1/2 -translate-x-1/2 w-[800px] max-w-[90vw] max-h-[80vh] bg-white z-[99999] shadow-2xl rounded-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200">
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-stone-200">
               <input
@@ -408,7 +479,7 @@ export function HeroSearch() {
           </div>
 
           {/* Mobile: Full-Screen Modal */}
-          <div className="md:hidden fixed inset-0 h-[100dvh] w-screen bg-white z-[9999] flex flex-col animate-in slide-in-from-bottom duration-300">
+          <div className="md:hidden fixed inset-0 h-[100dvh] w-screen bg-white z-[99999] flex flex-col animate-in slide-in-from-bottom duration-300 isolate">
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-4 border-b border-stone-200">
               <h3 className="font-serif text-lg font-medium text-olive">
@@ -431,7 +502,7 @@ export function HeroSearch() {
                 onKeyDown={handleLocationKeyDown}
                 placeholder="Search destinations..."
                 autoFocus
-                className="w-full px-4 py-3 bg-stone-50 rounded-lg border border-stone-200 outline-none focus:border-olive transition-colors"
+                className="w-full px-4 py-3 bg-stone-50 rounded-lg border border-stone-200 outline-none focus:border-olive transition-colors text-stone-800 placeholder:text-stone-400"
               />
             </div>
 
@@ -458,20 +529,21 @@ export function HeroSearch() {
               )}
             </div>
           </div>
-        </>
+        </>,
+        document.body
       )}
 
       {/* Date Picker Modal */}
-      {activeStep === 'dates' && (
+      {mounted && activeStep === 'dates' && createPortal(
         <>
           {/* Backdrop */}
           <div
-            className="fixed inset-0 bg-black/20 z-[9990]"
+            className="fixed inset-0 bg-black/20 z-[99990]"
             onClick={() => setActiveStep(null)}
           />
 
           {/* Desktop: Centered Modal - Reduced size for tight fit */}
-          <div className="hidden md:block fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[810px] max-w-[90vw] bg-white z-[9999] shadow-2xl rounded-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+          <div className="hidden md:block fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[810px] max-w-[90vw] bg-white z-[99999] shadow-2xl rounded-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between px-5 py-3 border-b border-stone-200">
               <h3 className="font-serif text-base font-medium text-olive">Select Dates</h3>
               <button
@@ -492,7 +564,7 @@ export function HeroSearch() {
           </div>
 
           {/* Mobile: Full-Screen Modal */}
-          <div className="md:hidden fixed inset-0 h-[100dvh] w-screen bg-white z-[9999] flex flex-col animate-in slide-in-from-bottom duration-300">
+          <div className="md:hidden fixed inset-0 h-[100dvh] w-screen bg-white z-[99999] flex flex-col animate-in slide-in-from-bottom duration-300 isolate">
             <div className="flex items-center justify-between px-4 py-4 border-b border-stone-200">
               <h3 className="font-serif text-lg font-medium text-olive">Select Dates</h3>
               <button
@@ -511,20 +583,21 @@ export function HeroSearch() {
               />
             </div>
           </div>
-        </>
+        </>,
+        document.body
       )}
 
       {/* Guest Picker Modal */}
-      {activeStep === 'guests' && (
+      {mounted && activeStep === 'guests' && createPortal(
         <>
           {/* Backdrop */}
           <div
-            className="fixed inset-0 bg-black/20 z-[9990]"
+            className="fixed inset-0 bg-black/20 z-[99990]"
             onClick={() => setActiveStep(null)}
           />
 
           {/* Desktop: Centered Modal */}
-          <div className="hidden md:block fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] max-w-[90vw] bg-white z-[9999] shadow-2xl rounded-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+          <div className="hidden md:block fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] max-w-[90vw] bg-white z-[99999] shadow-2xl rounded-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between px-6 py-4 border-b border-stone-200">
               <h3 className="font-serif text-lg font-medium text-olive">Select Guests</h3>
               <button
@@ -632,7 +705,7 @@ export function HeroSearch() {
             </div>
             <div className="px-6 pb-8 pt-4">
               <button
-                onClick={() => setActiveStep(null)}
+                onClick={handleGuestsDone}
                 className="w-full bg-olive hover:bg-olive/90 text-white py-3 rounded-lg font-semibold transition-colors"
               >
                 Done
@@ -641,7 +714,7 @@ export function HeroSearch() {
           </div>
 
           {/* Mobile: Full-Screen Modal */}
-          <div className="md:hidden fixed inset-0 h-[100dvh] w-screen bg-white z-[9999] flex flex-col animate-in slide-in-from-bottom duration-300">
+          <div className="md:hidden fixed inset-0 h-[100dvh] w-screen bg-white z-[99999] flex flex-col animate-in slide-in-from-bottom duration-300 isolate">
             <div className="flex items-center justify-between px-4 py-4 border-b border-stone-200">
               <h3 className="font-serif text-lg font-medium text-olive">Select Guests</h3>
               <button
@@ -749,14 +822,15 @@ export function HeroSearch() {
             </div>
             <div className="px-4 pb-6 pt-2">
               <button
-                onClick={() => setActiveStep(null)}
+                onClick={handleGuestsDone}
                 className="w-full bg-olive hover:bg-olive/90 text-white py-3 rounded-lg font-semibold transition-colors"
               >
                 Done
               </button>
             </div>
           </div>
-        </>
+        </>,
+        document.body
       )}
     </>
   );
@@ -782,13 +856,6 @@ function SuggestionsList({ suggestions, onSelect, isLoading }: SuggestionsListPr
         </div>
       )}
 
-      {suggestions.villas.length > 0 && (
-        <SuggestionGroup
-          title="Villas"
-          suggestions={suggestions.villas}
-          onSelect={onSelect}
-        />
-      )}
       {suggestions.countries.length > 0 && (
         <SuggestionGroup
           title="Countries"
@@ -807,6 +874,13 @@ function SuggestionsList({ suggestions, onSelect, isLoading }: SuggestionsListPr
         <SuggestionGroup
           title="Towns"
           suggestions={suggestions.towns}
+          onSelect={onSelect}
+        />
+      )}
+      {suggestions.villas.length > 0 && (
+        <SuggestionGroup
+          title="Villas"
+          suggestions={suggestions.villas}
           onSelect={onSelect}
         />
       )}

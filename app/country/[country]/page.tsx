@@ -11,8 +11,9 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { getAllVillas } from '@/lib/crm-client';
 import { MockVilla } from '@/lib/mock-db';
-import { MapPin, Search, ShieldCheck, Users, BedDouble, Bath, ChevronDown, Star } from 'lucide-react';
+import { MapPin, Search, ShieldCheck, Users, BedDouble, Bath, Star } from 'lucide-react';
 import { RegionExplorer } from '@/components/lp/region-explorer';
+import { HeroSearch } from '@/components/hero-search';
 
 // ===== COUNTRY CONFIGURATION =====
 
@@ -45,12 +46,12 @@ const COUNTRY_CONFIG: Record<string, CountryConfig> = {
     introSubtitle: '35+ Years of Spanish Holiday Rentals',
     introText: [
       'Our villa selection in Spain has been perfected over the past 35 years, so when you book a Spanish Villa with Vintage Travel you can feel secure in the knowledge that every property has been personally inspected.',
-      'From the lush green landscapes of Galicia to the sun-drenched beaches of Costa Brava, our collection offers something for every traveler.',
+      'From the lush green landscapes of Galicia to the sun-drenched beaches of Costa Blanca, our collection offers something for every traveler.',
       'Experience authentic Spanish culture, world-renowned cuisine, and stunning natural beauty from the comfort of your private villa.',
     ],
     regions: [
       { id: 'galicia', label: 'Galicia', title: 'Villas in Galicia', description1: 'Discover the green corner of Spain. Galicia offers stunning estuaries, fresh seafood, and a unique Celtic heritage distinct from the rest of the country.', description2: 'From the pilgrimage city of Santiago de Compostela to the wild Atlantic coast, our villas provide the perfect base to explore this lush region.' },
-      { id: 'costa-brava', label: 'Costa Brava', title: 'Villas in Costa Brava', description1: 'The "Wild Coast" is famous for its rugged beauty, hidden coves, and crystal-clear waters. A perfect blend of nature and culture.', description2: 'Explore medieval towns like Pals and Peratallada, or relax on the beaches of Begur and Palafrugell from the comfort of your private villa.' },
+      { id: 'costa-blanca', label: 'Costa Blanca', title: 'Villas in Costa Blanca', description1: 'The "White Coast" is renowned for its stunning white sandy beaches, year-round sunshine, and charming coastal towns.', description2: 'Discover the picturesque towns of Jávea, Moraira, and Denia, or explore the dramatic cliffs and hidden coves from your luxury villa.' },
       { id: 'andalucia', label: 'Andalucia', title: 'Villas in Andalucia', description1: 'Home of flamenco, tapas, and sun-drenched landscapes. Andalucia captures the passionate soul of southern Spain.', description2: 'Visit the Alhambra in Granada, the Mezquita in Cordoba, or simply enjoy the white villages scattered across the hills.' },
       { id: 'catalunya', label: 'Catalunya', title: 'Villas in Catalunya', description1: 'A region of distinct culture, stunning architecture, and diverse landscapes from the Pyrenees to the Mediterranean coast.', description2: 'Enjoy the cosmopolitan vibe of Barcelona or retreat to the quiet countryside. Our villas offer a taste of the authentic Catalan lifestyle.' },
     ],
@@ -281,35 +282,15 @@ function HeroSection({ config }: { config: CountryConfig }) {
         </h1>
       </div>
 
-      {/* Search Bar */}
-      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 w-[90%] md:w-[800px] bg-white shadow-xl flex flex-col md:flex-row">
-        <div className="flex-1 p-4 border-b md:border-b-0 md:border-r border-gray-200">
-          <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-1">Location</label>
-          <div className="flex justify-between items-center">
-            <span className="text-gray-700 font-serif">{config.name}</span>
-            <ChevronDown size={14} className="text-gray-400" />
-          </div>
-        </div>
-        <div className="flex-1 p-4 border-b md:border-b-0 md:border-r border-gray-200">
-          <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-1">Dates</label>
-          <div className="flex justify-between items-center">
-            <span className="text-gray-700 font-serif">Select date</span>
-            <ChevronDown size={14} className="text-gray-400" />
-          </div>
-        </div>
-        <div className="flex-1 p-4">
-          <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-1">Guests</label>
-          <div className="flex justify-between items-center">
-            <span className="text-gray-700 font-serif">Any</span>
-            <ChevronDown size={14} className="text-gray-400" />
-          </div>
-        </div>
-        <Link
-          href={`/search?country=${encodeURIComponent(config.name)}`}
-          className="bg-[#3A443C] text-white px-8 py-4 font-serif uppercase tracking-widest text-sm hover:bg-[#2F3B34] transition-colors flex items-center justify-center gap-2"
-        >
-          Search
-        </Link>
+      {/* Interactive Search Bar */}
+      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 w-[90%] md:w-[800px]">
+        <HeroSearch
+          initialLocation={{
+            label: config.name,
+            value: config.slug,
+            type: 'country',
+          }}
+        />
       </div>
     </div>
   );

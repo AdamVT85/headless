@@ -83,12 +83,6 @@ export default async function VillaPage({ params, searchParams }: VillaPageProps
     availability = [];
   }
 
-  // Get starting price from availability or villa data
-  const availableRecords = availability.filter((r) => r.status === 'Available' && r.price && r.price > 0);
-  const startingPrice = availableRecords.length > 0
-    ? Math.min(...availableRecords.map((r) => r.price!))
-    : villa.pricePerWeek;
-
   // Extract short description (first paragraph or first 200 chars)
   const shortDescription = villa.description
     ? villa.description.replace(/<[^>]*>/g, '').slice(0, 250) + (villa.description.length > 250 ? '...' : '')
@@ -263,16 +257,6 @@ export default async function VillaPage({ params, searchParams }: VillaPageProps
             <div className="sticky top-8 space-y-6">
               {/* Booking Card */}
               <div className="bg-white p-6 shadow-xl border border-gray-100">
-                <div className="text-xs text-gray-500 mb-1">Web Ref: {villa.id}</div>
-
-                {/* Price Display */}
-                <div className="flex items-baseline gap-2 mb-4 border-b pb-4">
-                  <span className="text-3xl font-serif text-vintage-green font-bold">
-                    £{startingPrice?.toLocaleString() || 'POA'}
-                  </span>
-                  <span className="text-sm text-gray-500">per week</span>
-                </div>
-
                 {/* Availability Calendar */}
                 <div className="mb-6">
                   <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-2">
@@ -285,13 +269,6 @@ export default async function VillaPage({ params, searchParams }: VillaPageProps
                   />
                 </div>
 
-                {/* Book Now Button */}
-                <button className="w-full bg-terracotta hover:bg-terracotta-600 text-white py-3 font-bold text-sm uppercase tracking-wider transition">
-                  Book Now
-                </button>
-                <p className="text-center text-[10px] text-gray-400 mt-2">
-                  You will not be charged yet
-                </p>
               </div>
 
               {/* Contact CTA */}

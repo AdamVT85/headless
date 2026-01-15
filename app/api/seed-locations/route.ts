@@ -26,7 +26,7 @@ const VALID_COUNTRIES = [
 
 // Country descriptions for SEO
 const countryDescriptions: Record<string, string> = {
-  'Spain': 'Discover stunning villas across Spain, from the sun-drenched Costa Brava to the rolling hills of Andalusia.',
+  'Spain': 'Discover stunning villas across Spain, from the sun-drenched Costa Blanca to the rolling hills of Andalusia.',
   'Balearic Islands': 'Experience the magic of the Balearic Islands - Mallorca, Menorca, Ibiza, and Formentera.',
   'France': 'From Provence lavender fields to the glamorous Côte d\'Azur, find your perfect French villa escape.',
   'Greece': 'Explore ancient history and island beauty with our collection of Greek villas.',

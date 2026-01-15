@@ -11,8 +11,9 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { getAllVillas } from '@/lib/crm-client';
 import { MockVilla } from '@/lib/mock-db';
-import { MapPin, Search, ShieldCheck, Users, BedDouble, Bath, ChevronDown, Star } from 'lucide-react';
+import { MapPin, Search, ShieldCheck, Users, BedDouble, Bath, Star } from 'lucide-react';
 import { TownExplorer } from '@/components/llp/town-explorer';
+import { HeroSearch } from '@/components/hero-search';
 
 // ===== REGION CONFIGURATION =====
 
@@ -47,18 +48,18 @@ const REGION_CONFIG: Record<string, Record<string, RegionConfig>> = {
         'Our handpicked villas provide the perfect base to explore this lush, unspoiled region.',
       ],
     },
-    'costa-brava': {
-      name: 'Costa Brava',
-      slug: 'costa-brava',
+    'costa-blanca': {
+      name: 'Costa Blanca',
+      slug: 'costa-blanca',
       country: 'Spain',
       countrySlug: 'spain',
       heroImage: 'https://images.unsplash.com/photo-1512413914633-b5043f4041ea?w=1920&h=1080&fit=crop&q=80',
-      introTitle: 'Our Costa Brava villas',
-      introSubtitle: 'The Wild Coast',
+      introTitle: 'Our Costa Blanca villas',
+      introSubtitle: 'The White Coast',
       introText: [
-        'The Costa Brava, or "Wild Coast," is famous for its rugged beauty, hidden coves, and crystal-clear waters.',
-        'Medieval villages like Pals and Peratallada sit alongside glamorous beach resorts and world-class restaurants.',
-        'Our villas offer the perfect blend of relaxation and cultural discovery.',
+        'The Costa Blanca, or "White Coast," is renowned for its stunning white sandy beaches, year-round sunshine, and charming coastal towns.',
+        'Discover the picturesque towns of Jávea, Moraira, and Denia, or explore the dramatic cliffs and hidden coves.',
+        'Our villas offer the perfect base to experience the best of this sun-drenched Mediterranean coastline.',
       ],
     },
     andalucia: {
@@ -541,35 +542,15 @@ function HeroSection({ config }: { config: RegionConfig }) {
         </h1>
       </div>
 
-      {/* Search Bar */}
-      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 w-[90%] md:w-[800px] bg-white shadow-xl flex flex-col md:flex-row">
-        <div className="flex-1 p-4 border-b md:border-b-0 md:border-r border-gray-200">
-          <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-1">Location</label>
-          <div className="flex justify-between items-center">
-            <span className="text-gray-700 font-serif">{config.name}</span>
-            <ChevronDown size={14} className="text-gray-400" />
-          </div>
-        </div>
-        <div className="flex-1 p-4 border-b md:border-b-0 md:border-r border-gray-200">
-          <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-1">Dates</label>
-          <div className="flex justify-between items-center">
-            <span className="text-gray-700 font-serif">Select date</span>
-            <ChevronDown size={14} className="text-gray-400" />
-          </div>
-        </div>
-        <div className="flex-1 p-4">
-          <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-1">Guests</label>
-          <div className="flex justify-between items-center">
-            <span className="text-gray-700 font-serif">Any</span>
-            <ChevronDown size={14} className="text-gray-400" />
-          </div>
-        </div>
-        <Link
-          href={`/search?region=${encodeURIComponent(config.name)}`}
-          className="bg-[#3A443C] text-white px-8 py-4 font-serif uppercase tracking-widest text-sm hover:bg-[#2F3B34] transition-colors flex items-center justify-center gap-2"
-        >
-          Search
-        </Link>
+      {/* Interactive Search Bar */}
+      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 w-[90%] md:w-[800px]">
+        <HeroSearch
+          initialLocation={{
+            label: config.name,
+            value: config.slug,
+            type: 'region',
+          }}
+        />
       </div>
     </div>
   );

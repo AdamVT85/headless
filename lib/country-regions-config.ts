@@ -29,12 +29,12 @@ export const COUNTRY_REGIONS: Record<string, CountryConfig> = {
         buttonText: 'View Villas in Galicia'
       },
       {
-        id: 'costa-brava',
-        label: 'Costa Brava',
-        title: 'Villas in Costa Brava',
-        description1: 'The "Wild Coast" is famous for its rugged beauty, hidden coves, and crystal-clear waters. A perfect blend of nature and culture.',
-        description2: 'Explore medieval towns like Pals and Peratallada, or relax on the beaches of Begur and Palafrugell from the comfort of your private villa.',
-        buttonText: 'View Villas in Costa Brava'
+        id: 'costa-blanca',
+        label: 'Costa Blanca',
+        title: 'Villas in Costa Blanca',
+        description1: 'The "White Coast" is renowned for its stunning white sandy beaches, year-round sunshine, and charming coastal towns.',
+        description2: 'Discover the picturesque towns of Jávea, Moraira, and Denia, or explore the dramatic cliffs and hidden coves from your luxury villa.',
+        buttonText: 'View Villas in Costa Blanca'
       },
       {
         id: 'andalucia',

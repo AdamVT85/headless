@@ -1,22 +1,16 @@
 /**
- * LOCATION AUTOSUGGEST - Server Action (DYNAMIC DATA)
+ * LOCATION AUTOSUGGEST - Server Action (STATIC DATA)
  * Powers the "Where to?" search input with grouped results
  *
- * PHASE 46: Preserves EXACT location hierarchy from P_Property_Location__c
- * Format: "Town, Region, Country" (e.g., "Spartia, Kefalonia, Greece")
+ * PERFORMANCE: Uses pre-generated static data for instant responses
+ * No Salesforce API calls - data loaded from lib/autosuggest-data.ts
  *
- * PERFORMANCE: Data is cached from villa data source
- *
- * Searches across:
- * - Countries (third part: "Greece", "Spain", etc.)
- * - Regions (second part: "Kefalonia", "Mallorca", etc.)
- * - Towns (first part: "Spartia", "Pollensa", etc.)
- * - Villas (all 2026-active villas)
+ * To update the data, run: npm run generate:autosuggest
  */
 
 'use server';
 
-import { getAllVillasFromSource } from '@/lib/villa-data-source';
+import { COUNTRIES, REGIONS, TOWNS, VILLAS } from '@/lib/autosuggest-data';
 
 export interface SearchSuggestion {
   id: string;
@@ -35,13 +29,13 @@ export interface GroupedSuggestions {
 
 /**
  * Get search suggestions based on user query
- * PHASE 45: Extracts unique locations dynamically from P_Property_Location__c
+ * Uses static pre-generated data for fast responses
  *
  * @param query - User search input
  * @returns Grouped suggestions object
  */
 export async function getSearchSuggestions(query: string): Promise<GroupedSuggestions> {
-  // PHASE 14: Increased threshold to 3 characters to reduce noise
+  // Minimum 3 characters to reduce noise
   if (!query || query.length < 3) {
     return {
       countries: [],
@@ -51,104 +45,70 @@ export async function getSearchSuggestions(query: string): Promise<GroupedSugges
     };
   }
 
-  try {
-    // Fetch all villas (uses cache from villa-data-source)
-    const villas = await getAllVillasFromSource();
-    const queryLower = query.toLowerCase();
+  const queryLower = query.toLowerCase();
 
-    // PHASE 46: Extract unique locations - EXACT HIERARCHY
-    // Format: "Town, Region, Country" (e.g., "Spartia, Kefalonia, Greece")
-    const uniqueCountries = new Set<string>();
-    const uniqueRegions = new Set<string>();
-    const uniqueTowns = new Set<string>();
+  // Filter countries
+  const countrySuggestions: SearchSuggestion[] = COUNTRIES
+    .filter(c => c.label.toLowerCase().includes(queryLower))
+    .map(c => ({
+      id: c.id,
+      label: c.label,
+      type: 'country' as const,
+      slug: c.slug,
+    }));
 
-    villas.forEach((villa) => {
-      // Collect unique countries (third part: "Greece")
-      if (villa.country) {
-        uniqueCountries.add(villa.country);
+  // Filter regions
+  const regionSuggestions: SearchSuggestion[] = REGIONS
+    .filter(r => r.label.toLowerCase().includes(queryLower))
+    .map(r => ({
+      id: r.id,
+      label: r.label,
+      type: 'region' as const,
+      slug: r.slug,
+    }));
+
+  // Filter towns (limit to 10)
+  const townSuggestions: SearchSuggestion[] = TOWNS
+    .filter(t => t.label.toLowerCase().includes(queryLower))
+    .slice(0, 10)
+    .map(t => ({
+      id: t.id,
+      label: t.label,
+      type: 'town' as const,
+      slug: t.slug,
+    }));
+
+  // Filter villas - only show if query matches at least 40% of villa name
+  const villaSuggestions: SearchSuggestion[] = VILLAS
+    .filter(v => {
+      const villaName = v.name.toLowerCase();
+      const queryLen = queryLower.length;
+      const nameLen = villaName.length;
+
+      // Query must be contained in the name
+      if (!villaName.includes(queryLower)) {
+        return false;
       }
 
-      // Collect unique regions (second part: "Kefalonia")
-      if (villa.region && villa.region !== 'Unknown Region') {
-        uniqueRegions.add(villa.region);
-      }
+      // Check if query represents at least 40% of the villa name
+      const matchPercentage = queryLen / nameLen;
+      return matchPercentage >= 0.4;
+    })
+    .slice(0, 5) // Limit to 5 villas
+    .map(v => ({
+      id: v.id,
+      label: v.name,
+      type: 'villa' as const,
+      slug: v.slug,
+      villaId: v.id,
+    }));
 
-      // Collect unique towns (first part: "Spartia")
-      if (villa.town) {
-        uniqueTowns.add(villa.town);
-      }
-    });
+  const suggestions: GroupedSuggestions = {
+    countries: countrySuggestions,
+    regions: regionSuggestions,
+    towns: townSuggestions,
+    villas: villaSuggestions,
+  };
 
-    // Filter and create suggestions based on query
-    const countrySuggestions: SearchSuggestion[] = Array.from(uniqueCountries)
-      .filter(country => country.toLowerCase().includes(queryLower))
-      .sort()
-      .map((country) => ({
-        id: `country-${country.toLowerCase().replace(/\s+/g, '-')}`,
-        label: country,
-        type: 'country',
-        slug: country.toLowerCase().replace(/\s+/g, '-'),
-      }));
-
-    const regionSuggestions: SearchSuggestion[] = Array.from(uniqueRegions)
-      .filter(region => region.toLowerCase().includes(queryLower))
-      .sort()
-      .map((region) => ({
-        id: `region-${region.toLowerCase().replace(/\s+/g, '-')}`,
-        label: region,
-        type: 'region',
-        slug: region.toLowerCase().replace(/\s+/g, '-'),
-      }));
-
-    const townSuggestions: SearchSuggestion[] = Array.from(uniqueTowns)
-      .filter(town => town.toLowerCase().includes(queryLower))
-      .sort()
-      .slice(0, 10) // Limit towns to top 10
-      .map((town) => ({
-        id: `town-${town.toLowerCase().replace(/\s+/g, '-')}`,
-        label: town,
-        type: 'town',
-        slug: town.toLowerCase().replace(/\s+/g, '-'),
-      }));
-
-    // Filter villas by query (name, region, country, or town)
-    const villaSuggestions: SearchSuggestion[] = villas
-      .filter((villa) => {
-        const nameMatch = villa.name?.toLowerCase().includes(queryLower);
-        const titleMatch = villa.title?.toLowerCase().includes(queryLower);
-        const regionMatch = villa.region?.toLowerCase().includes(queryLower);
-        const countryMatch = villa.country?.toLowerCase().includes(queryLower);
-        const townMatch = villa.town?.toLowerCase().includes(queryLower);
-
-        return nameMatch || titleMatch || regionMatch || countryMatch || townMatch;
-      })
-      .slice(0, 5) // Limit villas to top 5
-      .map((villa) => ({
-        id: villa.id,
-        label: villa.title || villa.name,
-        type: 'villa',
-        slug: villa.slug,
-        villaId: villa.id,
-      }));
-
-    const suggestions: GroupedSuggestions = {
-      countries: countrySuggestions,
-      regions: regionSuggestions,
-      towns: townSuggestions,
-      villas: villaSuggestions,
-    };
-
-    console.log(`[Search Suggestions] Query: "${query}" (Dynamic P_Property_Location__c)`);
-    console.log(`[Search Suggestions] Results: ${suggestions.countries.length} countries, ${suggestions.regions.length} regions, ${suggestions.towns.length} towns, ${suggestions.villas.length} villas`);
-
-    return suggestions;
-  } catch (error) {
-    console.error('[Search Suggestions] Error:', error);
-    return {
-      countries: [],
-      regions: [],
-      towns: [],
-      villas: [],
-    };
-  }
+  return suggestions;
 }

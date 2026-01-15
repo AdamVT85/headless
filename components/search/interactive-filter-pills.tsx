@@ -105,13 +105,13 @@ interface PendingChanges {
 }
 
 export function InteractiveFilterPills({
-  location,
-  locationType,
-  startDate,
-  endDate,
-  adults = 0,
-  children = 0,
-  infants = 0,
+  location: propLocation,
+  locationType: propLocationType,
+  startDate: propStartDate,
+  endDate: propEndDate,
+  adults: propAdults = 0,
+  children: propChildren = 0,
+  infants: propInfants = 0,
 }: FilterPillsProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -120,6 +120,15 @@ export function InteractiveFilterPills({
   const containerRef = useRef<HTMLDivElement>(null);
   const dateScrollRef = useRef<HTMLDivElement>(null);
   const dragScroll = useDragScroll();
+
+  // Read current filter values directly from URL for immediate UI updates
+  // This ensures pills update instantly when URL changes, not waiting for search results
+  const location = searchParams.get('loc') || searchParams.get('location') || searchParams.get('region') || searchParams.get('q') || undefined;
+  const startDate = searchParams.get('start') || undefined;
+  const endDate = searchParams.get('end') || undefined;
+  const adults = parseInt(searchParams.get('adults') || '0') || 0;
+  const children = parseInt(searchParams.get('children') || '0') || 0;
+  const infants = parseInt(searchParams.get('infants') || '0') || 0;
 
   // Scroll to center (original date) when dates pill expands
   useEffect(() => {
@@ -219,6 +228,36 @@ export function InteractiveFilterPills({
     setExpanded(null);
     setPending({});
     setHasPendingChanges(false);
+  };
+
+  // Immediate removal functions (for X button clicks - no staging required)
+  const removeLocationImmediate = () => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete('loc');
+    params.delete('location');
+    params.delete('region');
+    params.delete('q');
+    params.delete('type');
+    router.push(`${pathname}?${params.toString()}`);
+  };
+
+  const removeDatesImmediate = () => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete('start');
+    params.delete('end');
+    params.delete('flex');
+    params.delete('rangeStart');
+    params.delete('rangeEnd');
+    params.delete('duration');
+    router.push(`${pathname}?${params.toString()}`);
+  };
+
+  const removeGuestsImmediate = () => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete('adults');
+    params.delete('children');
+    params.delete('infants');
+    router.push(`${pathname}?${params.toString()}`);
   };
 
   // Find sibling regions for current location
@@ -372,279 +411,294 @@ export function InteractiveFilterPills({
   }
 
   return (
-    <div ref={containerRef} className="mt-6 flex flex-wrap items-center gap-3 relative">
-      {/* Location Pill */}
-      {hasLocation && (
-        <div className="relative">
-          <div
-            className={cn(
-              'flex items-center gap-2 bg-olive/10 rounded-full transition-all duration-300',
-              expanded === 'location' ? 'pr-2' : 'px-4 py-2'
-            )}
-          >
-            {expanded === 'location' ? (
-              <div className="flex items-center gap-1 py-1 pl-3 animate-in fade-in slide-in-from-left-2 duration-200">
-                {siblingRegions.length > 0 ? (
-                  siblingRegions.map((region) => {
-                    const isSelected = (effectiveLocation || '').toLowerCase() === region.label.toLowerCase();
-                    const isOriginal = location?.toLowerCase() === region.label.toLowerCase();
+    <div ref={containerRef} className="mt-6 relative">
+      {/* Pills Container - wraps on mobile */}
+      <div className="flex flex-wrap items-center gap-3">
+        {/* Location Pill */}
+        {hasLocation && (
+          <div className="relative">
+            <div
+              className={cn(
+                'flex items-center gap-2 bg-olive/10 rounded-full transition-all duration-300',
+                expanded === 'location' ? 'pr-2' : 'px-4 py-2'
+              )}
+            >
+              {expanded !== 'location' && (
+                <>
+                  <button
+                    onClick={() => setExpanded('location')}
+                    className="flex items-center gap-2"
+                  >
+                    <MapPin className="h-4 w-4 text-olive" />
+                    <span className="text-sm font-medium text-stone-800">{location}</span>
+                  </button>
+                  <button
+                    onClick={removeLocationImmediate}
+                    className="p-0.5 hover:bg-stone-200 rounded-full transition-colors ml-1"
+                  >
+                    <X className="h-3.5 w-3.5 text-stone-500" />
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        )}
 
-                    return (
-                      <button
-                        key={region.id}
-                        onClick={() => stageSelectRegion(region.label)}
-                        className={cn(
-                          'px-3 py-1.5 rounded-full text-sm font-medium transition-colors whitespace-nowrap',
-                          isSelected
-                            ? 'bg-olive text-white'
-                            : isOriginal
-                              ? 'bg-olive/30 text-stone-800'
-                              : 'bg-white text-stone-700 hover:bg-olive/20'
-                        )}
-                      >
-                        {region.label}
-                      </button>
-                    );
-                  })
-                ) : (
-                  <span className="px-3 py-1.5 text-sm text-stone-600">{location}</span>
-                )}
+        {/* Guests Pill */}
+        {hasGuests && (
+          <div className="relative">
+            <div className="flex items-center gap-2 bg-olive/10 rounded-full px-4 py-2">
+              {expanded !== 'guests' && (
+                <>
+                  <button
+                    onClick={() => setExpanded('guests')}
+                    className="flex items-center gap-2"
+                  >
+                    <Users className="h-4 w-4 text-olive" />
+                    <span className="text-sm font-medium text-stone-800">
+                      {totalGuests} {totalGuests === 1 ? 'Guest' : 'Guests'}
+                    </span>
+                  </button>
+                  <button
+                    onClick={removeGuestsImmediate}
+                    className="p-0.5 hover:bg-stone-200 rounded-full transition-colors ml-1"
+                  >
+                    <X className="h-3.5 w-3.5 text-stone-500" />
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Dates Pill */}
+        {hasDates && (
+          <div className="relative">
+            <div className="flex items-center bg-olive/10 rounded-full px-4 py-2">
+              {expanded !== 'dates' && (
+                <>
+                  <button
+                    onClick={() => setExpanded('dates')}
+                    className="flex items-center gap-2"
+                  >
+                    <Calendar className="h-4 w-4 text-olive" />
+                    <span className="text-sm font-medium text-stone-800">
+                      {startDate && endDate
+                        ? `${format(parseISO(startDate), 'd MMM')} - ${format(parseISO(endDate), 'd MMM')}`
+                        : 'Any Dates'
+                      }
+                    </span>
+                  </button>
+                  <button
+                    onClick={removeDatesImmediate}
+                    className="p-0.5 hover:bg-stone-200 rounded-full transition-colors ml-1"
+                  >
+                    <X className="h-3.5 w-3.5 text-stone-500" />
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Expanded Panel - Full width below pills */}
+      {expanded && (
+        <div className="mt-3 bg-white border border-stone-200 rounded-lg shadow-lg p-4 animate-in fade-in slide-in-from-top-2 duration-200">
+          {/* Location Expanded */}
+          {expanded === 'location' && (
+            <div className="flex flex-wrap items-center gap-2">
+              <MapPin className="h-4 w-4 text-olive flex-shrink-0" />
+              {siblingRegions.length > 0 ? (
+                siblingRegions.map((region) => {
+                  const isSelected = (effectiveLocation || '').toLowerCase() === region.label.toLowerCase();
+                  const isOriginal = location?.toLowerCase() === region.label.toLowerCase();
+
+                  return (
+                    <button
+                      key={region.id}
+                      onClick={() => stageSelectRegion(region.label)}
+                      className={cn(
+                        'px-3 py-1.5 rounded-full text-sm font-medium transition-colors whitespace-nowrap',
+                        isSelected
+                          ? 'bg-olive text-white'
+                          : isOriginal
+                            ? 'bg-olive/30 text-stone-800'
+                            : 'bg-stone-100 text-stone-700 hover:bg-olive/20'
+                      )}
+                    >
+                      {region.label}
+                    </button>
+                  );
+                })
+              ) : (
+                <span className="px-3 py-1.5 text-sm text-stone-600">{location}</span>
+              )}
+              <button
+                onClick={() => setExpanded(null)}
+                className="p-1.5 hover:bg-stone-200 rounded-full transition-colors ml-auto"
+              >
+                <X className="h-4 w-4 text-stone-500" />
+              </button>
+            </div>
+          )}
+
+          {/* Guests Expanded */}
+          {expanded === 'guests' && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <Users className="h-4 w-4 text-olive" />
                 <button
                   onClick={() => setExpanded(null)}
-                  className="p-1.5 hover:bg-stone-200 rounded-full transition-colors ml-1"
+                  className="p-1.5 hover:bg-stone-200 rounded-full transition-colors"
                 >
                   <X className="h-4 w-4 text-stone-500" />
                 </button>
               </div>
-            ) : (
-              <>
-                <button
-                  onClick={() => setExpanded('location')}
-                  className="flex items-center gap-2"
-                >
-                  <MapPin className="h-4 w-4 text-olive" />
-                  <span className="text-sm font-medium text-stone-800">{location}</span>
-                </button>
-                <button
-                  onClick={stageRemoveLocation}
-                  className="p-0.5 hover:bg-stone-200 rounded-full transition-colors ml-1"
-                >
-                  <X className="h-3.5 w-3.5 text-stone-500" />
-                </button>
-              </>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Guests Pill */}
-      {hasGuests && (
-        <div className="relative">
-          <div
-            className={cn(
-              'flex items-center gap-2 bg-olive/10 rounded-full transition-all duration-300',
-              expanded === 'guests' ? 'pr-2' : 'px-4 py-2'
-            )}
-          >
-            {expanded === 'guests' ? (
-              <div className="flex items-center gap-4 py-1 pl-3 animate-in fade-in slide-in-from-left-2 duration-200">
+              <div className="flex flex-wrap gap-4 md:gap-6">
                 {/* Adults */}
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-medium text-stone-600 uppercase tracking-wide">Adults</span>
-                  <div className="flex items-center gap-1">
+                <div className="flex items-center gap-3">
+                  <span className="text-xs font-medium text-stone-600 uppercase tracking-wide w-16">Adults</span>
+                  <div className="flex items-center gap-2">
                     <button
                       onClick={() => stageUpdateGuests('adults', -1)}
                       disabled={effectiveAdults <= 0}
                       className={cn(
-                        'w-6 h-6 rounded-full flex items-center justify-center transition-colors',
+                        'w-8 h-8 rounded-full flex items-center justify-center transition-colors',
                         effectiveAdults <= 0
                           ? 'bg-stone-100 text-stone-300 cursor-not-allowed'
                           : 'bg-white text-olive hover:bg-olive hover:text-white border border-olive'
                       )}
                     >
-                      <Minus className="h-3 w-3" />
+                      <Minus className="h-4 w-4" />
                     </button>
-                    <span className="w-5 text-center text-sm font-semibold">{effectiveAdults}</span>
+                    <span className="w-6 text-center text-sm font-semibold">{effectiveAdults}</span>
                     <button
                       onClick={() => stageUpdateGuests('adults', 1)}
-                      className="w-6 h-6 rounded-full bg-white text-olive hover:bg-olive hover:text-white border border-olive flex items-center justify-center transition-colors"
+                      className="w-8 h-8 rounded-full bg-white text-olive hover:bg-olive hover:text-white border border-olive flex items-center justify-center transition-colors"
                     >
-                      <Plus className="h-3 w-3" />
+                      <Plus className="h-4 w-4" />
                     </button>
                   </div>
                 </div>
 
                 {/* Children */}
-                <div className="flex items-center gap-2 border-l border-stone-300 pl-4">
-                  <span className="text-xs font-medium text-stone-600 uppercase tracking-wide">Children</span>
-                  <div className="flex items-center gap-1">
+                <div className="flex items-center gap-3">
+                  <span className="text-xs font-medium text-stone-600 uppercase tracking-wide w-16">Children</span>
+                  <div className="flex items-center gap-2">
                     <button
                       onClick={() => stageUpdateGuests('children', -1)}
                       disabled={effectiveChildren <= 0}
                       className={cn(
-                        'w-6 h-6 rounded-full flex items-center justify-center transition-colors',
+                        'w-8 h-8 rounded-full flex items-center justify-center transition-colors',
                         effectiveChildren <= 0
                           ? 'bg-stone-100 text-stone-300 cursor-not-allowed'
                           : 'bg-white text-olive hover:bg-olive hover:text-white border border-olive'
                       )}
                     >
-                      <Minus className="h-3 w-3" />
+                      <Minus className="h-4 w-4" />
                     </button>
-                    <span className="w-5 text-center text-sm font-semibold">{effectiveChildren}</span>
+                    <span className="w-6 text-center text-sm font-semibold">{effectiveChildren}</span>
                     <button
                       onClick={() => stageUpdateGuests('children', 1)}
-                      className="w-6 h-6 rounded-full bg-white text-olive hover:bg-olive hover:text-white border border-olive flex items-center justify-center transition-colors"
+                      className="w-8 h-8 rounded-full bg-white text-olive hover:bg-olive hover:text-white border border-olive flex items-center justify-center transition-colors"
                     >
-                      <Plus className="h-3 w-3" />
+                      <Plus className="h-4 w-4" />
                     </button>
                   </div>
                 </div>
 
                 {/* Infants */}
-                <div className="flex items-center gap-2 border-l border-stone-300 pl-4">
-                  <span className="text-xs font-medium text-stone-600 uppercase tracking-wide">Infants</span>
-                  <div className="flex items-center gap-1">
+                <div className="flex items-center gap-3">
+                  <span className="text-xs font-medium text-stone-600 uppercase tracking-wide w-16">Infants</span>
+                  <div className="flex items-center gap-2">
                     <button
                       onClick={() => stageUpdateGuests('infants', -1)}
                       disabled={effectiveInfants <= 0}
                       className={cn(
-                        'w-6 h-6 rounded-full flex items-center justify-center transition-colors',
+                        'w-8 h-8 rounded-full flex items-center justify-center transition-colors',
                         effectiveInfants <= 0
                           ? 'bg-stone-100 text-stone-300 cursor-not-allowed'
                           : 'bg-white text-olive hover:bg-olive hover:text-white border border-olive'
                       )}
                     >
-                      <Minus className="h-3 w-3" />
+                      <Minus className="h-4 w-4" />
                     </button>
-                    <span className="w-5 text-center text-sm font-semibold">{effectiveInfants}</span>
+                    <span className="w-6 text-center text-sm font-semibold">{effectiveInfants}</span>
                     <button
                       onClick={() => stageUpdateGuests('infants', 1)}
-                      className="w-6 h-6 rounded-full bg-white text-olive hover:bg-olive hover:text-white border border-olive flex items-center justify-center transition-colors"
+                      className="w-8 h-8 rounded-full bg-white text-olive hover:bg-olive hover:text-white border border-olive flex items-center justify-center transition-colors"
                     >
-                      <Plus className="h-3 w-3" />
+                      <Plus className="h-4 w-4" />
                     </button>
                   </div>
                 </div>
-
-                <button
-                  onClick={() => setExpanded(null)}
-                  className="p-1.5 hover:bg-stone-200 rounded-full transition-colors ml-1"
-                >
-                  <X className="h-4 w-4 text-stone-500" />
-                </button>
               </div>
-            ) : (
-              <>
-                <button
-                  onClick={() => setExpanded('guests')}
-                  className="flex items-center gap-2"
-                >
-                  <Users className="h-4 w-4 text-olive" />
-                  <span className="text-sm font-medium text-stone-800">
-                    {totalGuests} {totalGuests === 1 ? 'Guest' : 'Guests'}
-                  </span>
-                </button>
-                <button
-                  onClick={stageRemoveGuests}
-                  className="p-0.5 hover:bg-stone-200 rounded-full transition-colors ml-1"
-                >
-                  <X className="h-3.5 w-3.5 text-stone-500" />
-                </button>
-              </>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Dates Pill */}
-      {hasDates && (
-        <div className="relative">
-          <div
-            className={cn(
-              'flex items-center bg-olive/10 rounded-full transition-all duration-300',
-              expanded === 'dates' ? 'px-2 py-1' : 'px-4 py-2'
-            )}
-          >
-            {expanded === 'dates' ? (
-              <div className="flex items-center gap-2 animate-in fade-in slide-in-from-left-2 duration-200">
-                <div
-                  ref={dragScroll.ref}
-                  {...dragScroll.handlers}
-                  className={cn(
-                    'flex items-center gap-1 py-1 px-1 overflow-x-auto max-w-[400px] scrollbar-hide',
-                    dragScroll.isDragging ? 'cursor-grabbing' : 'cursor-grab'
-                  )}
-                  style={{ scrollBehavior: dragScroll.isDragging ? 'auto' : 'smooth' }}
-                >
-                  {weekOptions.map((week, index) => {
-                    const selected = isWeekSelected(week.start);
-
-                    return (
-                      <button
-                        key={index}
-                        data-original={week.isOriginal}
-                        onClick={() => !dragScroll.isDragging && stageSelectWeek(week.start, week.end)}
-                        className={cn(
-                          'px-3 py-1.5 rounded-full text-xs font-medium transition-colors whitespace-nowrap flex-shrink-0 select-none',
-                          selected
-                            ? 'bg-olive text-white'
-                            : week.isOriginal
-                              ? 'bg-olive/30 text-stone-800 ring-1 ring-olive/50'
-                              : 'bg-white text-stone-700 hover:bg-olive/20'
-                        )}
-                      >
-                        {week.label}
-                      </button>
-                    );
-                  })}
-                </div>
-                <button
-                  onClick={() => setExpanded(null)}
-                  className="p-1.5 hover:bg-stone-200 rounded-full transition-colors flex-shrink-0"
-                >
-                  <X className="h-4 w-4 text-stone-500" />
-                </button>
-              </div>
-            ) : (
-              <>
-                <button
-                  onClick={() => setExpanded('dates')}
-                  className="flex items-center gap-2"
-                >
-                  <Calendar className="h-4 w-4 text-olive" />
-                  <span className="text-sm font-medium text-stone-800">
-                    {startDate && endDate
-                      ? `${format(parseISO(startDate), 'd MMM')} - ${format(parseISO(endDate), 'd MMM')}`
-                      : 'Any Dates'
-                    }
-                  </span>
-                </button>
-                <button
-                  onClick={stageRemoveDates}
-                  className="p-0.5 hover:bg-stone-200 rounded-full transition-colors ml-1"
-                >
-                  <X className="h-3.5 w-3.5 text-stone-500" />
-                </button>
-              </>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Apply Filter Button - appears when a pill is expanded */}
-      {expanded && (
-        <button
-          onClick={applyChanges}
-          disabled={!hasPendingChanges}
-          className={cn(
-            'px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 animate-in fade-in slide-in-from-left-2',
-            hasPendingChanges
-              ? 'bg-olive text-white hover:bg-olive/90 shadow-md'
-              : 'bg-stone-200 text-stone-400 cursor-not-allowed'
+            </div>
           )}
-        >
-          Apply Filter
-        </button>
+
+          {/* Dates Expanded */}
+          {expanded === 'dates' && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Calendar className="h-4 w-4 text-olive" />
+                <button
+                  onClick={() => setExpanded(null)}
+                  className="p-1.5 hover:bg-stone-200 rounded-full transition-colors"
+                >
+                  <X className="h-4 w-4 text-stone-500" />
+                </button>
+              </div>
+              <div
+                ref={dragScroll.ref}
+                {...dragScroll.handlers}
+                className={cn(
+                  'flex items-center gap-2 py-1 overflow-x-auto scrollbar-hide',
+                  dragScroll.isDragging ? 'cursor-grabbing' : 'cursor-grab'
+                )}
+                style={{ scrollBehavior: dragScroll.isDragging ? 'auto' : 'smooth' }}
+              >
+                {weekOptions.map((week, index) => {
+                  const selected = isWeekSelected(week.start);
+
+                  return (
+                    <button
+                      key={index}
+                      data-original={week.isOriginal}
+                      onClick={() => !dragScroll.isDragging && stageSelectWeek(week.start, week.end)}
+                      className={cn(
+                        'px-3 py-2 rounded-full text-xs font-medium transition-colors whitespace-nowrap flex-shrink-0 select-none',
+                        selected
+                          ? 'bg-olive text-white'
+                          : week.isOriginal
+                            ? 'bg-olive/30 text-stone-800 ring-1 ring-olive/50'
+                            : 'bg-stone-100 text-stone-700 hover:bg-olive/20'
+                      )}
+                    >
+                      {week.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Apply Button */}
+          <div className="mt-4 pt-3 border-t border-stone-100">
+            <button
+              onClick={applyChanges}
+              disabled={!hasPendingChanges}
+              className={cn(
+                'w-full md:w-auto px-6 py-2 rounded-full text-sm font-medium transition-all duration-200',
+                hasPendingChanges
+                  ? 'bg-olive text-white hover:bg-olive/90 shadow-md'
+                  : 'bg-stone-200 text-stone-400 cursor-not-allowed'
+              )}
+            >
+              Apply Filter
+            </button>
+          </div>
+        </div>
       )}
 
       {/* Scrollbar hide styles */}

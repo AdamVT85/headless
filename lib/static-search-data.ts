@@ -47,7 +47,6 @@ export const REGIONS: StaticRegion[] = [
   { id: 'region-spain', label: 'Spain', slug: 'spain', type: 'country' },
   { id: 'region-andalusia', label: 'Andalusia', slug: 'andalusia', type: 'region' },
   { id: 'region-costa-blanca', label: 'Costa Blanca', slug: 'costa-blanca', type: 'region' },
-  { id: 'region-costa-brava', label: 'Costa Brava', slug: 'costa-brava', type: 'region' },
   { id: 'region-costa-del-sol', label: 'Costa del Sol', slug: 'costa-del-sol', type: 'region' },
 
   // Balearic Islands - Separate region group (not sub-region of Spain)
@@ -158,7 +157,7 @@ export const VILLAS: StaticVilla[] = [
   { id: 'villa-015', label: 'Villa Javea Vista', slug: 'villa-javea-vista', region: 'Spain', type: 'villa' },
   { id: 'villa-016', label: 'Moraira Coastal Estate', slug: 'moraira-coastal-estate', region: 'Spain', type: 'villa' },
   { id: 'villa-017', label: 'Catalonia Luxury Villa', slug: 'catalonia-luxury-villa', region: 'Spain', type: 'villa' },
-  { id: 'villa-018', label: 'Costa Brava Sea View', slug: 'costa-brava-sea-view', region: 'Spain', type: 'villa' },
+  { id: 'villa-018', label: 'Costa Blanca Sea View', slug: 'costa-blanca-sea-view', region: 'Spain', type: 'villa' },
   { id: 'villa-019', label: 'Valencia Modern Villa', slug: 'valencia-modern-villa', region: 'Spain', type: 'villa' },
   { id: 'villa-020', label: 'Galicia Country House', slug: 'galicia-country-house', region: 'Spain', type: 'villa' },
 

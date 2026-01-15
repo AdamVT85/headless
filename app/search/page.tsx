@@ -148,8 +148,6 @@ function SearchPageContent() {
     return 'Any Dates';
   };
 
-  const hasFilters = results?.filters?.loc || results?.filters?.q || results?.filters?.start || results?.filters?.adults;
-
   return (
     <main className="min-h-screen bg-clay">
       {/* Header */}
@@ -162,18 +160,8 @@ function SearchPageContent() {
             Discover luxury villas matching your criteria
           </p>
 
-          {/* Interactive Filter Pills */}
-          {hasFilters && results && (
-            <InteractiveFilterPills
-              location={results.filters?.loc || results.filters?.q}
-              locationType={searchParams.get('type') || undefined}
-              startDate={results.filters?.start}
-              endDate={results.filters?.end}
-              adults={results.filters?.adults || 0}
-              children={results.filters?.children || 0}
-              infants={parseInt(searchParams.get('infants') || '0')}
-            />
-          )}
+          {/* Interactive Filter Pills - renders based on URL params for immediate updates */}
+          <InteractiveFilterPills />
         </div>
       </section>
 
