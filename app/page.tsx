@@ -284,9 +284,9 @@ function USPSection({ data }: { data: HomePageData }) {
   const usps = data.usps || defaultData.usps || [];
 
   return (
-    <section className="py-24 bg-white">
+    <section className="py-12 bg-white">
       <div className="max-w-7xl mx-auto px-6">
-        <div className="text-center mb-16">
+        <div className="text-center mb-8">
           <h3 className="text-2xl font-serif text-vintage-green italic">
             {data.uspSectionTitle || 'Why book with Vintage?'}
           </h3>
@@ -328,9 +328,9 @@ function HottestCollections({ data }: { data: HomePageData }) {
     : defaultCollections;
 
   return (
-    <section className="py-12 bg-white">
+    <section className="py-6 bg-white">
       <div className="max-w-7xl mx-auto px-6">
-        <h3 className="text-center font-serif text-2xl mb-12 italic">
+        <h3 className="text-center font-serif text-2xl mb-6 italic">
           {data.collectionsSectionTitle || 'Our hottest collections'}
         </h3>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
@@ -364,7 +364,7 @@ function HottestCollections({ data }: { data: HomePageData }) {
             );
           })}
         </div>
-        <div className="mt-16 text-center">
+        <div className="mt-8 text-center">
           <Link
             href={data.collectionsCtaLink || '/search'}
             className="border border-vintage-green text-vintage-green px-12 py-3 text-xs uppercase tracking-widest hover:bg-vintage-green hover:text-white transition-all inline-block"
@@ -454,9 +454,9 @@ function FeaturedVillasSection({ data }: { data: HomePageData }) {
   }
 
   return (
-    <section className="py-24 bg-white">
+    <section className="py-12 bg-white">
       <div className="max-w-7xl mx-auto px-6">
-        <div className="text-center mb-16">
+        <div className="text-center mb-8">
           <h2 className="text-4xl font-serif text-vintage-green">
             {data.featuredVillasTitle || 'Featured Villas'}
           </h2>
@@ -503,7 +503,7 @@ function FeaturedVillasSection({ data }: { data: HomePageData }) {
           })}
         </div>
 
-        <div className="mt-12 text-center">
+        <div className="mt-6 text-center">
           <Link
             href="/search"
             className="border border-vintage-green text-vintage-green px-12 py-3 text-xs uppercase tracking-widest hover:bg-vintage-green hover:text-white transition-all inline-block"
@@ -525,9 +525,9 @@ function VillasForXGrid({ data }: { data: HomePageData }) {
     : defaultCategories;
 
   return (
-    <section className="py-24 bg-cream">
+    <section className="py-12 bg-cream">
       <div className="max-w-7xl mx-auto px-6">
-        <div className="text-center mb-16">
+        <div className="text-center mb-8">
           <span className="text-lg font-serif italic text-gray-500 block mb-2">
             {data.categoriesSectionSubtitle || 'Villas for X'}
           </span>
@@ -588,14 +588,14 @@ function Testimonials({ data }: { data: HomePageData }) {
   const ratingSource = data.testimonialsRatingSource || 'feefo';
 
   return (
-    <section className="py-24 bg-white border-b border-gray-100">
+    <section className="py-12 bg-white border-b border-gray-100">
       <div className="max-w-7xl mx-auto px-6">
-        <h3 className="text-center font-serif text-2xl italic mb-12">
+        <h3 className="text-center font-serif text-2xl italic mb-6">
           {data.testimonialsTitle || 'What our customers say'}
         </h3>
 
-        <div className="bg-white shadow-sm border border-gray-100 p-12 relative">
-          <div className="flex flex-col md:flex-row items-center justify-center space-y-4 md:space-y-0 md:space-x-8 mb-16 pb-12 border-b border-gray-100">
+        <div className="bg-white shadow-sm border border-gray-100 p-8 relative">
+          <div className="flex flex-col md:flex-row items-center justify-center space-y-4 md:space-y-0 md:space-x-8 mb-8 pb-6 border-b border-gray-100">
             <div className="text-xl font-medium text-gray-700">Average Customer Rating:</div>
             <div className="flex items-center space-x-2">
               <div className="flex text-yellow-500">
