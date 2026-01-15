@@ -3,7 +3,7 @@
 /**
  * VILLA PAGE - HERO GALLERY
  * Full-width hero image with modern fullscreen gallery viewer
- * Features: Keyboard navigation, touch swipe, smooth animations
+ * Features: Preloading, keyboard navigation, touch swipe, left thumbnail strip
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -24,10 +24,10 @@ interface HeroGalleryProps {
 export function HeroGallery({ heroImage, galleryImages = [], title }: HeroGalleryProps) {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [isAnimating, setIsAnimating] = useState(false);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
   const thumbnailContainerRef = useRef<HTMLDivElement>(null);
+  const [loadedImages, setLoadedImages] = useState<Set<number>>(new Set([0]));
 
   // Combine hero and gallery images
   const allImages: GalleryImage[] = [
@@ -36,9 +36,33 @@ export function HeroGallery({ heroImage, galleryImages = [], title }: HeroGaller
   ];
 
   const hero = heroImage || '/placeholder-villa.svg';
-
-  // Minimum swipe distance for gesture recognition
   const minSwipeDistance = 50;
+
+  // Preload adjacent images for instant loading
+  useEffect(() => {
+    if (!lightboxOpen || allImages.length === 0) return;
+
+    const toPreload = new Set<number>();
+    toPreload.add(currentIndex);
+
+    // Preload next 2 and previous 2 images
+    for (let i = 1; i <= 2; i++) {
+      const nextIdx = (currentIndex + i) % allImages.length;
+      const prevIdx = (currentIndex - i + allImages.length) % allImages.length;
+      toPreload.add(nextIdx);
+      toPreload.add(prevIdx);
+    }
+
+    toPreload.forEach(idx => {
+      if (!loadedImages.has(idx)) {
+        const img = new window.Image();
+        img.src = allImages[idx].url;
+        img.onload = () => {
+          setLoadedImages(prev => new Set([...prev, idx]));
+        };
+      }
+    });
+  }, [currentIndex, lightboxOpen, allImages, loadedImages]);
 
   const openLightbox = useCallback((index: number = 0) => {
     setCurrentIndex(index);
@@ -52,25 +76,19 @@ export function HeroGallery({ heroImage, galleryImages = [], title }: HeroGaller
   }, []);
 
   const goToPrevious = useCallback(() => {
-    if (isAnimating || allImages.length <= 1) return;
-    setIsAnimating(true);
+    if (allImages.length <= 1) return;
     setCurrentIndex((prev) => (prev === 0 ? allImages.length - 1 : prev - 1));
-    setTimeout(() => setIsAnimating(false), 300);
-  }, [allImages.length, isAnimating]);
+  }, [allImages.length]);
 
   const goToNext = useCallback(() => {
-    if (isAnimating || allImages.length <= 1) return;
-    setIsAnimating(true);
+    if (allImages.length <= 1) return;
     setCurrentIndex((prev) => (prev === allImages.length - 1 ? 0 : prev + 1));
-    setTimeout(() => setIsAnimating(false), 300);
-  }, [allImages.length, isAnimating]);
+  }, [allImages.length]);
 
   const goToIndex = useCallback((index: number) => {
-    if (isAnimating || index === currentIndex) return;
-    setIsAnimating(true);
+    if (index === currentIndex) return;
     setCurrentIndex(index);
-    setTimeout(() => setIsAnimating(false), 300);
-  }, [currentIndex, isAnimating]);
+  }, [currentIndex]);
 
   // Keyboard navigation
   useEffect(() => {
@@ -97,7 +115,7 @@ export function HeroGallery({ heroImage, galleryImages = [], title }: HeroGaller
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [lightboxOpen, goToPrevious, goToNext, closeLightbox]);
 
-  // Scroll thumbnail into view when current index changes
+  // Scroll thumbnail into view
   useEffect(() => {
     if (thumbnailContainerRef.current && lightboxOpen) {
       const container = thumbnailContainerRef.current;
@@ -106,7 +124,7 @@ export function HeroGallery({ heroImage, galleryImages = [], title }: HeroGaller
         thumbnail.scrollIntoView({
           behavior: 'smooth',
           block: 'nearest',
-          inline: 'center',
+          inline: 'nearest',
         });
       }
     }
@@ -124,16 +142,9 @@ export function HeroGallery({ heroImage, galleryImages = [], title }: HeroGaller
 
   const onTouchEnd = () => {
     if (!touchStart || !touchEnd) return;
-
     const distance = touchStart - touchEnd;
-    const isLeftSwipe = distance > minSwipeDistance;
-    const isRightSwipe = distance < -minSwipeDistance;
-
-    if (isLeftSwipe) {
-      goToNext();
-    } else if (isRightSwipe) {
-      goToPrevious();
-    }
+    if (distance > minSwipeDistance) goToNext();
+    else if (distance < -minSwipeDistance) goToPrevious();
   };
 
   return (
@@ -148,11 +159,7 @@ export function HeroGallery({ heroImage, galleryImages = [], title }: HeroGaller
           className="object-cover transition-transform duration-1000 ease-in-out group-hover:scale-105"
           priority
         />
-
-        {/* Dark gradient overlay at bottom for button visibility */}
         <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/50 to-transparent pointer-events-none" />
-
-        {/* View All Photos Button */}
         {allImages.length > 0 && (
           <button
             onClick={() => openLightbox(0)}
@@ -162,8 +169,6 @@ export function HeroGallery({ heroImage, galleryImages = [], title }: HeroGaller
             View All Photos ({allImages.length})
           </button>
         )}
-
-        {/* Mobile Title Overlay */}
         <div className="absolute top-1/2 left-0 w-full text-center pointer-events-none md:hidden text-white drop-shadow-2xl z-20 transform -translate-y-1/2 px-4">
           <h1 className="font-serif text-4xl font-bold tracking-wide drop-shadow-lg">{title}</h1>
         </div>
@@ -172,152 +177,183 @@ export function HeroGallery({ heroImage, galleryImages = [], title }: HeroGaller
       {/* Fullscreen Gallery Lightbox */}
       {lightboxOpen && allImages.length > 0 && (
         <div
-          className="fixed inset-0 z-50 bg-black flex flex-col"
+          className="fixed inset-0 z-50 bg-[#FAF9F6] flex"
           role="dialog"
           aria-modal="true"
           aria-label="Photo gallery"
         >
-          {/* Header Bar */}
-          <div className="flex items-center justify-between px-4 py-3 bg-black/80 backdrop-blur-sm z-20">
-            {/* Counter */}
-            <div className="text-white font-medium">
-              <span className="text-lg">{currentIndex + 1}</span>
-              <span className="text-white/50 mx-1">/</span>
-              <span className="text-white/50">{allImages.length}</span>
+          {/* Left Thumbnail Strip - Desktop */}
+          <div className="hidden md:flex flex-col w-24 bg-[#F3F0E9] border-r border-stone-200">
+            {/* Header */}
+            <div className="p-3 border-b border-stone-200 text-center">
+              <span className="text-sm font-medium text-stone-600">
+                {currentIndex + 1}/{allImages.length}
+              </span>
             </div>
 
-            {/* Title */}
-            <h2 className="hidden md:block text-white/70 text-sm font-serif truncate max-w-md">
-              {title}
-            </h2>
-
-            {/* Close button */}
-            <button
-              onClick={closeLightbox}
-              className="text-white/70 hover:text-white transition p-2 hover:bg-white/10 rounded-full"
-              aria-label="Close gallery (Esc)"
+            {/* Thumbnails */}
+            <div
+              ref={thumbnailContainerRef}
+              className="flex-1 overflow-y-auto p-2 space-y-2"
+              style={{ scrollbarWidth: 'thin' }}
             >
-              <X size={24} />
-            </button>
+              {allImages.map((img, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => goToIndex(idx)}
+                  className={`relative w-full aspect-[4/3] overflow-hidden rounded transition-all duration-200 ${
+                    idx === currentIndex
+                      ? 'ring-2 ring-vintage-green ring-offset-2'
+                      : 'opacity-50 hover:opacity-80'
+                  }`}
+                  aria-label={`View image ${idx + 1}`}
+                  aria-current={idx === currentIndex ? 'true' : 'false'}
+                >
+                  <Image
+                    src={img.url}
+                    alt={img.alt || `Thumbnail ${idx + 1}`}
+                    fill
+                    sizes="80px"
+                    className="object-cover"
+                  />
+                </button>
+              ))}
+            </div>
           </div>
 
-          {/* Main Image Area */}
-          <div
-            className="flex-1 relative flex items-center justify-center overflow-hidden"
-            onTouchStart={onTouchStart}
-            onTouchMove={onTouchMove}
-            onTouchEnd={onTouchEnd}
-          >
-            {/* Previous button - Desktop */}
-            {allImages.length > 1 && (
-              <button
-                onClick={goToPrevious}
-                className="hidden md:flex absolute left-4 top-1/2 -translate-y-1/2 text-white/50 hover:text-white hover:bg-white/10 transition p-3 rounded-full z-10"
-                aria-label="Previous image (Left arrow)"
-              >
-                <ChevronLeft size={40} strokeWidth={1.5} />
-              </button>
-            )}
-
-            {/* Image Container */}
-            <div className="relative w-full h-full flex items-center justify-center px-4 md:px-20">
-              <div
-                className={`relative w-full h-full max-w-5xl transition-opacity duration-300 ${
-                  isAnimating ? 'opacity-50' : 'opacity-100'
-                }`}
-              >
-                <Image
-                  src={allImages[currentIndex].url}
-                  alt={allImages[currentIndex].alt || `${title} - Image ${currentIndex + 1}`}
-                  fill
-                  sizes="(max-width: 768px) 100vw, 80vw"
-                  className="object-contain"
-                  priority
-                />
+          {/* Main Content Area */}
+          <div className="flex-1 flex flex-col">
+            {/* Header Bar */}
+            <div className="flex items-center justify-between px-4 py-3 border-b border-stone-200">
+              {/* Mobile Counter */}
+              <div className="md:hidden text-stone-600 font-medium">
+                <span>{currentIndex + 1}</span>
+                <span className="text-stone-400 mx-1">/</span>
+                <span className="text-stone-400">{allImages.length}</span>
               </div>
+
+              {/* Title */}
+              <h2 className="hidden md:block text-stone-600 text-sm font-serif truncate max-w-md">
+                {title}
+              </h2>
+
+              {/* Desktop spacer */}
+              <div className="hidden md:block" />
+
+              {/* Close button */}
+              <button
+                onClick={closeLightbox}
+                className="text-stone-500 hover:text-stone-800 transition p-2 hover:bg-stone-100 rounded-full"
+                aria-label="Close gallery (Esc)"
+              >
+                <X size={24} />
+              </button>
             </div>
 
-            {/* Next button - Desktop */}
-            {allImages.length > 1 && (
-              <button
-                onClick={goToNext}
-                className="hidden md:flex absolute right-4 top-1/2 -translate-y-1/2 text-white/50 hover:text-white hover:bg-white/10 transition p-3 rounded-full z-10"
-                aria-label="Next image (Right arrow)"
-              >
-                <ChevronRight size={40} strokeWidth={1.5} />
-              </button>
-            )}
-
-            {/* Mobile Navigation Arrows */}
-            {allImages.length > 1 && (
-              <div className="md:hidden absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-8 z-10">
+            {/* Main Image Area */}
+            <div
+              className="flex-1 relative flex items-center justify-center overflow-hidden"
+              onTouchStart={onTouchStart}
+              onTouchMove={onTouchMove}
+              onTouchEnd={onTouchEnd}
+            >
+              {/* Previous button */}
+              {allImages.length > 1 && (
                 <button
                   onClick={goToPrevious}
-                  className="text-white/70 hover:text-white p-3 bg-black/50 rounded-full backdrop-blur-sm"
-                  aria-label="Previous image"
+                  className="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-700 hover:bg-stone-200/80 transition p-2 md:p-3 rounded-full z-10 bg-white/80 backdrop-blur-sm shadow-sm"
+                  aria-label="Previous image (Left arrow)"
                 >
-                  <ChevronLeft size={28} />
+                  <ChevronLeft size={28} strokeWidth={1.5} />
                 </button>
+              )}
+
+              {/* Image Container - Full Height */}
+              <div className="relative w-full h-full flex items-center justify-center px-16 md:px-24 py-4">
+                <div className="relative w-full h-full">
+                  <Image
+                    src={allImages[currentIndex].url}
+                    alt={allImages[currentIndex].alt || `${title} - Image ${currentIndex + 1}`}
+                    fill
+                    sizes="(max-width: 768px) 100vw, calc(100vw - 96px)"
+                    className="object-contain"
+                    priority
+                  />
+                </div>
+
+                {/* Preload next and previous images (hidden) */}
+                {allImages.length > 1 && (
+                  <>
+                    <link
+                      rel="preload"
+                      as="image"
+                      href={allImages[(currentIndex + 1) % allImages.length].url}
+                    />
+                    <link
+                      rel="preload"
+                      as="image"
+                      href={allImages[(currentIndex - 1 + allImages.length) % allImages.length].url}
+                    />
+                  </>
+                )}
+              </div>
+
+              {/* Next button */}
+              {allImages.length > 1 && (
                 <button
                   onClick={goToNext}
-                  className="text-white/70 hover:text-white p-3 bg-black/50 rounded-full backdrop-blur-sm"
-                  aria-label="Next image"
+                  className="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-700 hover:bg-stone-200/80 transition p-2 md:p-3 rounded-full z-10 bg-white/80 backdrop-blur-sm shadow-sm"
+                  aria-label="Next image (Right arrow)"
                 >
-                  <ChevronRight size={28} />
+                  <ChevronRight size={28} strokeWidth={1.5} />
                 </button>
+              )}
+
+              {/* Mobile swipe hint */}
+              <div className="md:hidden absolute top-2 left-1/2 -translate-x-1/2 text-stone-400 text-xs bg-white/80 px-3 py-1 rounded-full">
+                Swipe to navigate
+              </div>
+            </div>
+
+            {/* Mobile Thumbnail Strip - Bottom */}
+            {allImages.length > 1 && (
+              <div className="md:hidden border-t border-stone-200 bg-[#F3F0E9] p-2">
+                <div className="flex gap-2 overflow-x-auto">
+                  {allImages.map((img, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => goToIndex(idx)}
+                      className={`relative w-16 h-12 flex-shrink-0 overflow-hidden rounded transition-all ${
+                        idx === currentIndex
+                          ? 'ring-2 ring-vintage-green'
+                          : 'opacity-50'
+                      }`}
+                    >
+                      <Image
+                        src={img.url}
+                        alt={`Thumbnail ${idx + 1}`}
+                        fill
+                        sizes="64px"
+                        className="object-cover"
+                      />
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
 
-            {/* Swipe hint for mobile */}
-            <div className="md:hidden absolute top-4 left-1/2 -translate-x-1/2 text-white/40 text-xs">
-              Swipe to navigate
+            {/* Keyboard hint - Desktop */}
+            <div className="hidden md:flex absolute bottom-4 right-4 text-stone-400 text-xs items-center gap-4">
+              <span className="flex items-center gap-1">
+                <kbd className="px-2 py-1 bg-stone-200 rounded text-[10px]">←</kbd>
+                <kbd className="px-2 py-1 bg-stone-200 rounded text-[10px]">→</kbd>
+                <span className="ml-1">Navigate</span>
+              </span>
+              <span className="flex items-center gap-1">
+                <kbd className="px-2 py-1 bg-stone-200 rounded text-[10px]">Esc</kbd>
+                <span className="ml-1">Close</span>
+              </span>
             </div>
-          </div>
-
-          {/* Thumbnail Strip - Desktop */}
-          {allImages.length > 1 && (
-            <div className="hidden md:block bg-black/80 backdrop-blur-sm py-4 px-4">
-              <div
-                ref={thumbnailContainerRef}
-                className="flex gap-2 overflow-x-auto max-w-5xl mx-auto scrollbar-hide"
-                style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-              >
-                {allImages.map((img, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => goToIndex(idx)}
-                    className={`relative w-20 h-14 flex-shrink-0 overflow-hidden rounded transition-all duration-200 ${
-                      idx === currentIndex
-                        ? 'ring-2 ring-white ring-offset-2 ring-offset-black scale-105'
-                        : 'opacity-40 hover:opacity-70'
-                    }`}
-                    aria-label={`View image ${idx + 1}`}
-                    aria-current={idx === currentIndex ? 'true' : 'false'}
-                  >
-                    <Image
-                      src={img.url}
-                      alt={img.alt || `Thumbnail ${idx + 1}`}
-                      fill
-                      sizes="80px"
-                      className="object-cover"
-                    />
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Keyboard hint - Desktop */}
-          <div className="hidden md:flex absolute bottom-24 left-4 text-white/30 text-xs items-center gap-4">
-            <span className="flex items-center gap-1">
-              <kbd className="px-2 py-1 bg-white/10 rounded text-[10px]">←</kbd>
-              <kbd className="px-2 py-1 bg-white/10 rounded text-[10px]">→</kbd>
-              <span className="ml-1">Navigate</span>
-            </span>
-            <span className="flex items-center gap-1">
-              <kbd className="px-2 py-1 bg-white/10 rounded text-[10px]">Esc</kbd>
-              <span className="ml-1">Close</span>
-            </span>
           </div>
         </div>
       )}
