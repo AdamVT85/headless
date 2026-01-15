@@ -5,6 +5,7 @@
 
 import { defineConfig } from 'sanity';
 import { structureTool } from 'sanity/structure';
+import { media } from 'sanity-plugin-media';
 // Note: visionTool temporarily removed due to version compatibility
 // import { visionTool } from '@sanity/vision';
 import { schemaTypes } from './sanity/schemas';
@@ -23,6 +24,7 @@ export default defineConfig({
   basePath: '/studio',
 
   plugins: [
+    media(),
     structureTool({
       structure: (S) =>
         S.list()
