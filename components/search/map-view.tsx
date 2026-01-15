@@ -272,7 +272,12 @@ interface VillaMarkerProps {
 }
 
 function VillaMarker({ villa, isHovered, onHover, onClick }: VillaMarkerProps) {
-  if (!villa.latitude || !villa.longitude) return null;
+  // Convert to numbers (coordinates may come as strings from API)
+  const lat = typeof villa.latitude === 'string' ? parseFloat(villa.latitude) : villa.latitude;
+  const lng = typeof villa.longitude === 'string' ? parseFloat(villa.longitude) : villa.longitude;
+
+  // Skip rendering if coordinates are invalid
+  if (!lat || !lng || isNaN(lat) || isNaN(lng)) return null;
 
   // Custom marker icon - changes color on hover
   const markerIcon = {
@@ -287,7 +292,7 @@ function VillaMarker({ villa, isHovered, onHover, onClick }: VillaMarkerProps) {
 
   return (
     <Marker
-      position={{ lat: villa.latitude, lng: villa.longitude }}
+      position={{ lat, lng }}
       icon={markerIcon}
       onMouseOver={() => onHover(villa.id)}
       onMouseOut={() => onHover(null)}
