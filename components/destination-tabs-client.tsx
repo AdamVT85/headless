@@ -85,9 +85,10 @@ export function DestinationTabsClient({ destinations, sectionTitle }: Destinatio
     const cmsContent = destinations?.[key];
     const defaultContent = defaultDestinations[key] || defaultDestinations['Spain'];
 
+    // Use default slug for consistency (CMS slugs may differ)
     return {
       title: cmsContent?.title || defaultContent.title,
-      slug: cmsContent?.slug || defaultContent.slug,
+      slug: defaultContent.slug, // Always use our defined slugs for URL consistency
       imageUrl: cmsContent?.imageUrl || defaultContent.imageUrl,
       introduction: cmsContent?.introduction || defaultContent.introduction,
     };
