@@ -14,11 +14,11 @@ const collectionUrls: Record<string, string> = {
   'algarve': '/portugal/algarve',
 };
 
-// Map traveller type IDs to search URLs (matching homepage)
+// Map traveller type IDs to friendly URLs
 const travellerTypeUrls: Record<string, string> = {
-  'family': "/search?facilities=Children's Pool,Fenced/Gated Pool",
-  'couples': '/search?maxSleeps=4',
-  'large': '/search?minSleeps=8',
+  'family': '/family-friendly-villas',
+  'couples': '/villas-for-couples',
+  'large': '/large-villas',
 };
 
 interface CardProps {

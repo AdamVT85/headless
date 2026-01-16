@@ -138,19 +138,19 @@ const fallbackImages = {
 };
 
 const defaultCollections: Collection[] = [
-  { _key: '1', title: 'Villas with a view', linkUrl: '/search?facilities=Great Views' },
-  { _key: '2', title: 'Villas by the sea', linkUrl: '/search?facilities=Beach - Walk (within 1.5km)' },
-  { _key: '3', title: 'Villas in Tuscany', linkUrl: '/search?location=Tuscany' },
-  { _key: '4', title: "Villas with children's pools", linkUrl: "/search?facilities=Children's Pool,Fenced/Gated Pool" },
+  { _key: '1', title: 'Villas with a view', linkUrl: '/villas-with-sea-views' },
+  { _key: '2', title: 'Villas by the sea', linkUrl: '/beachside-villas' },
+  { _key: '3', title: 'Villas in Tuscany', linkUrl: '/italy/tuscany' },
+  { _key: '4', title: "Family-friendly villas", linkUrl: '/family-friendly-villas' },
 ];
 
 const defaultCategories: VillaCategory[] = [
-  { _key: '1', title: "Villas with children's pools", linkUrl: "/search?facilities=Children's Pool,Fenced/Gated Pool" },
-  { _key: '2', title: 'Villas for couples', linkUrl: '/search?maxSleeps=4' },
-  { _key: '3', title: 'Large villas', linkUrl: '/search?minSleeps=8' },
-  { _key: '4', title: 'Car not essential', linkUrl: '/search?facilities=Car NOT Essential' },
-  { _key: '5', title: 'Villas near beaches', linkUrl: '/search?facilities=Beach - Walk (within 1.5km)' },
-  { _key: '6', title: 'Secluded villas', linkUrl: '/search?facilities=Grounds offer TOTAL PRIVACY' },
+  { _key: '1', title: 'Family-friendly villas', linkUrl: '/family-friendly-villas' },
+  { _key: '2', title: 'Villas for couples', linkUrl: '/villas-for-couples' },
+  { _key: '3', title: 'Large villas', linkUrl: '/large-villas' },
+  { _key: '4', title: 'Car-free villas', linkUrl: '/car-free-villas' },
+  { _key: '5', title: 'Beachside villas', linkUrl: '/beachside-villas' },
+  { _key: '6', title: 'Secluded villas', linkUrl: '/secluded-villas' },
 ];
 
 export default async function HomePage() {
@@ -536,15 +536,20 @@ function FeaturedVillasSection({ data }: { data: HomePageData }) {
   );
 }
 
-// Category title to filter URL mapping - ensures correct filters regardless of CMS data
+// Category title to friendly URL mapping - ensures correct URLs regardless of CMS data
 const categoryFilterUrls: Record<string, string> = {
-  "villas with children's pools": "/search?facilities=Children's Pool,Fenced/Gated Pool",
-  "family-friendly villas": "/search?facilities=Children's Pool,Fenced/Gated Pool", // Alias
-  "villas for couples": "/search?maxSleeps=4",
-  "large villas": "/search?minSleeps=8",
-  "car not essential": "/search?facilities=Car NOT Essential",
-  "villas near beaches": "/search?facilities=Beach - Walk (within 1.5km)",
-  "secluded villas": "/search?facilities=Grounds offer TOTAL PRIVACY",
+  "villas with children's pools": "/family-friendly-villas",
+  "family-friendly villas": "/family-friendly-villas",
+  "villas for couples": "/villas-for-couples",
+  "large villas": "/large-villas",
+  "car not essential": "/car-free-villas",
+  "car-free villas": "/car-free-villas",
+  "villas near beaches": "/beachside-villas",
+  "beachside villas": "/beachside-villas",
+  "secluded villas": "/secluded-villas",
+  "villas with a view": "/villas-with-sea-views",
+  "villas with sea views": "/villas-with-sea-views",
+  "villas with heated pools": "/villas-with-heated-pools",
 };
 
 /**

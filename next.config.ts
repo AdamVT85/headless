@@ -3,10 +3,42 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   // Rewrites for friendly landing page URLs
   // Maps /spain to /country/spain, /spain/galicia to /country/spain/galicia
+  // Maps category URLs like /family-friendly-villas to /category/family-friendly-villas
   async rewrites() {
     const countries = ['spain', 'france', 'italy', 'greece', 'portugal', 'croatia', 'turkey', 'balearics'];
 
+    // Category slugs for filtered villa pages
+    const categories = [
+      'family-friendly-villas',
+      'villas-for-couples',
+      'large-villas',
+      'villas-with-sea-views',
+      'beachside-villas',
+      'secluded-villas',
+      'car-free-villas',
+      'villas-with-heated-pools',
+    ];
+
     return [
+      // Category URLs: /spain/andalucia/family-friendly-villas -> /category/spain/andalucia/family-friendly-villas
+      ...countries.flatMap(country =>
+        categories.map(category => ({
+          source: `/${country}/:region/${category}`,
+          destination: `/category/${country}/:region/${category}`,
+        }))
+      ),
+      // Category URLs: /spain/family-friendly-villas -> /category/spain/family-friendly-villas
+      ...countries.flatMap(country =>
+        categories.map(category => ({
+          source: `/${country}/${category}`,
+          destination: `/category/${country}/${category}`,
+        }))
+      ),
+      // Category URLs: /family-friendly-villas -> /category/family-friendly-villas
+      ...categories.map(category => ({
+        source: `/${category}`,
+        destination: `/category/${category}`,
+      })),
       // Clean URLs: /spain/galicia -> /country/spain/galicia
       ...countries.map(country => ({
         source: `/${country}/:region`,
