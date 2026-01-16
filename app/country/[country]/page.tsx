@@ -464,7 +464,7 @@ function ValuePropsSection() {
 function FeaturedVillasSection({ villas, countryName }: { villas: MockVilla[]; countryName: string }) {
   if (villas.length === 0) {
     return (
-      <section className="bg-[#F3F0E9] py-16 px-6 md:px-20">
+      <section className="bg-[#F3F0E9] pt-16 pb-8 px-6 md:px-20">
         <div className="max-w-5xl mx-auto text-center">
           <h2 className="text-3xl font-serif text-[#3A443C] mb-6">Featured Villas in {countryName}</h2>
           <p className="text-gray-600 mb-8">
@@ -482,7 +482,7 @@ function FeaturedVillasSection({ villas, countryName }: { villas: MockVilla[]; c
   }
 
   return (
-    <section className="bg-[#F3F0E9] py-16 px-6 md:px-20">
+    <section className="bg-[#F3F0E9] pt-16 pb-8 px-6 md:px-20">
       <div className="max-w-5xl mx-auto">
         <h2 className="text-3xl font-serif text-[#3A443C] mb-8 text-center">Featured Villas in {countryName}</h2>
 

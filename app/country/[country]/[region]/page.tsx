@@ -730,7 +730,7 @@ function ValuePropsSection() {
 function FeaturedVillasSection({ villas, regionName }: { villas: MockVilla[]; regionName: string }) {
   if (villas.length === 0) {
     return (
-      <section className="bg-[#F3F0E9] py-16 px-6 md:px-20">
+      <section className="bg-[#F3F0E9] pt-16 pb-8 px-6 md:px-20">
         <div className="max-w-5xl mx-auto text-center">
           <h2 className="text-3xl font-serif text-[#3A443C] mb-6">Featured Villas in {regionName}</h2>
           <p className="text-gray-600 mb-8">
@@ -748,7 +748,7 @@ function FeaturedVillasSection({ villas, regionName }: { villas: MockVilla[]; re
   }
 
   return (
-    <section className="bg-[#F3F0E9] py-16 px-6 md:px-20">
+    <section className="bg-[#F3F0E9] pt-16 pb-8 px-6 md:px-20">
       <div className="max-w-5xl mx-auto">
         <h2 className="text-3xl font-serif text-[#3A443C] mb-8 text-center">Featured Villas in {regionName}</h2>
 
@@ -885,7 +885,7 @@ const CATEGORIES = [
 
 function CategoriesSection({ regionName, countryName }: { regionName: string; countryName: string }) {
   return (
-    <section className="bg-[#F3F0E9] py-16 px-6 md:px-20">
+    <section className="bg-[#F3F0E9] pt-16 pb-8 px-6 md:px-20">
       <div className="text-center mb-12">
         <h4 className="text-lg font-serif text-gray-600 mb-2">Villas in {regionName}</h4>
         <h2 className="text-3xl md:text-4xl font-serif text-[#3A443C] italic">
