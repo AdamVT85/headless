@@ -556,7 +556,7 @@ function VillasForXGrid({ data }: { data: HomePageData }) {
           </h2>
         </div>
 
-        <div className="grid grid-cols-3 gap-3 md:gap-8">
+        <div className="grid grid-cols-2 gap-3 md:gap-8">
           {categories.map((card, i) => {
             const imageUrl = getImageUrl(card.image, 600) || fallbackImages.categories[i % fallbackImages.categories.length];
             const description = card.description || `Discover our selection of ${card.title.toLowerCase()} perfect for your Mediterranean escape.`;
