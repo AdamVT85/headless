@@ -43,7 +43,7 @@ export function ClimateWidget({ data, region }: ClimateWidgetProps) {
   const maxSun = Math.max(...data.map(d => d.sun));
 
   return (
-    <div className="mb-16">
+    <div className="mb-8">
       {/* Header */}
       <div className="mb-6">
         <h3 className="font-serif text-2xl text-vintage-green mb-2">
