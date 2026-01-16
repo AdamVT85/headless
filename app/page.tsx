@@ -539,6 +539,7 @@ function FeaturedVillasSection({ data }: { data: HomePageData }) {
 // Category title to filter URL mapping - ensures correct filters regardless of CMS data
 const categoryFilterUrls: Record<string, string> = {
   "villas with children's pools": "/search?facilities=Children's Pool,Fenced/Gated Pool",
+  "family-friendly villas": "/search?facilities=Children's Pool,Fenced/Gated Pool", // Alias
   "villas for couples": "/search?maxSleeps=4",
   "large villas": "/search?minSleeps=8",
   "car not essential": "/search?facilities=Car NOT Essential",
