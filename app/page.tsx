@@ -656,7 +656,7 @@ function SignupBanner({ data }: { data: HomePageData }) {
   const bgImageUrl = getImageUrl(data.newsletterBackgroundImage, 1920) || fallbackImages.newsletter;
 
   return (
-    <section className="relative h-[500px] flex items-center justify-center overflow-hidden">
+    <section className="relative h-[400px] md:h-[500px] flex items-center justify-center overflow-hidden">
       <div
         className="absolute inset-0 bg-cover bg-center"
         style={{ backgroundImage: `url('${bgImageUrl}')` }}
@@ -665,7 +665,7 @@ function SignupBanner({ data }: { data: HomePageData }) {
       </div>
 
       <div className="relative z-10 w-full max-w-4xl px-6">
-        <div className="bg-white/95 backdrop-blur-md p-12 relative overflow-hidden">
+        <div className="bg-white/95 backdrop-blur-md p-6 md:p-12 relative overflow-hidden">
           <div className="relative z-10">
             <h2 className="text-4xl font-serif text-vintage-green mb-4">
               {data.newsletterTitle || 'Sign up to our newsletter'}
