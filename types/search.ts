@@ -28,6 +28,10 @@ export interface SearchParams {
   minPrice?: number;
   maxPrice?: number;
 
+  // Guest capacity filters
+  minSleeps?: number; // Minimum guests villa sleeps (e.g., 8 for "large villas")
+  maxSleeps?: number; // Maximum guests villa sleeps (e.g., 4 for "couples")
+
   // Facility filters (AND logic - villa must have ALL selected facilities)
   facilities?: string[]; // Array of facility names to filter by
 }

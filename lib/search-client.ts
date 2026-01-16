@@ -232,6 +232,18 @@ export async function searchVillas(params: SearchParams): Promise<MockVilla[]> {
       }
     }
 
+    // 4a. Filter by minimum sleeps (e.g., large villas that sleep 8+)
+    if (params.minSleeps && params.minSleeps > 0) {
+      villas = villas.filter(v => v.maxGuests >= params.minSleeps!);
+      console.log(`[SEARCH] After minSleeps filter (>= ${params.minSleeps}): ${villas.length} villas`);
+    }
+
+    // 4b. Filter by maximum sleeps (e.g., couples villas that sleep 4 or less)
+    if (params.maxSleeps && params.maxSleeps > 0) {
+      villas = villas.filter(v => v.maxGuests <= params.maxSleeps!);
+      console.log(`[SEARCH] After maxSleeps filter (<= ${params.maxSleeps}): ${villas.length} villas`);
+    }
+
     // 4.5. Filter by Facilities (AND logic - villa must have ALL selected facilities)
     if (params.facilities && params.facilities.length > 0) {
       const requiredFacilities = params.facilities.map(f => f.toLowerCase().trim());

@@ -608,12 +608,12 @@ function VillaCard({ villa }: { villa: MockVilla }) {
 // ===== CATEGORIES SECTION =====
 
 const CATEGORIES = [
-  { id: 1, title: 'Family-friendly villas', image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=600&h=400&fit=crop&q=80', href: '/search?amenity=family-friendly' },
-  { id: 2, title: 'Villas for couples', image: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=600&h=400&fit=crop&q=80', href: '/search?guests=2' },
-  { id: 3, title: 'Large villas', image: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=600&h=400&fit=crop&q=80', href: '/search?bedrooms=5' },
-  { id: 4, title: 'Car not essential', image: 'https://images.unsplash.com/photo-1499793983690-e29da59ef1c2?w=600&h=400&fit=crop&q=80', href: '/search?amenity=walkable' },
-  { id: 5, title: 'Villas near beaches', image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600&h=400&fit=crop&q=80', href: '/search?amenity=beach' },
-  { id: 6, title: 'Secluded villas', image: 'https://images.unsplash.com/photo-1600585154526-990dced4db0d?w=600&h=400&fit=crop&q=80', href: '/search?amenity=secluded' },
+  { id: 1, title: "Villas with children's pools", image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=600&h=400&fit=crop&q=80', href: "/search?facilities=Children's Pool,Fenced/Gated Pool" },
+  { id: 2, title: 'Villas for couples', image: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=600&h=400&fit=crop&q=80', href: '/search?maxSleeps=4' },
+  { id: 3, title: 'Large villas', image: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=600&h=400&fit=crop&q=80', href: '/search?minSleeps=8' },
+  { id: 4, title: 'Car not essential', image: 'https://images.unsplash.com/photo-1499793983690-e29da59ef1c2?w=600&h=400&fit=crop&q=80', href: '/search?facilities=Car NOT Essential' },
+  { id: 5, title: 'Villas near beaches', image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600&h=400&fit=crop&q=80', href: '/search?facilities=Beach - Walk (within 1.5km)' },
+  { id: 6, title: 'Secluded villas', image: 'https://images.unsplash.com/photo-1600585154526-990dced4db0d?w=600&h=400&fit=crop&q=80', href: '/search?facilities=Grounds offer TOTAL PRIVACY' },
 ];
 
 function CategoriesSection({ countryName }: { countryName: string }) {

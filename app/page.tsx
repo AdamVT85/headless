@@ -145,12 +145,12 @@ const defaultCollections: Collection[] = [
 ];
 
 const defaultCategories: VillaCategory[] = [
-  { _key: '1', title: 'Family-friendly villas', linkUrl: '/search' },
-  { _key: '2', title: 'Villas for couple', linkUrl: '/search' },
-  { _key: '3', title: 'Large villas', linkUrl: '/search' },
-  { _key: '4', title: 'Car not essential', linkUrl: '/search' },
-  { _key: '5', title: 'Villas near beaches', linkUrl: '/search' },
-  { _key: '6', title: 'Secluded villas', linkUrl: '/search' },
+  { _key: '1', title: "Villas with children's pools", linkUrl: "/search?facilities=Children's Pool,Fenced/Gated Pool" },
+  { _key: '2', title: 'Villas for couples', linkUrl: '/search?maxSleeps=4' },
+  { _key: '3', title: 'Large villas', linkUrl: '/search?minSleeps=8' },
+  { _key: '4', title: 'Car not essential', linkUrl: '/search?facilities=Car NOT Essential' },
+  { _key: '5', title: 'Villas near beaches', linkUrl: '/search?facilities=Beach - Walk (within 1.5km)' },
+  { _key: '6', title: 'Secluded villas', linkUrl: '/search?facilities=Grounds offer TOTAL PRIVACY' },
 ];
 
 export default async function HomePage() {

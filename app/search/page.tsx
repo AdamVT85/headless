@@ -79,6 +79,8 @@ function SearchPageContent() {
         const adults = searchParams.get('adults') ? parseInt(searchParams.get('adults')!) : undefined;
         const children = searchParams.get('children') ? parseInt(searchParams.get('children')!) : undefined;
         const facilities = searchParams.get('facilities')?.split(',').filter(Boolean) || undefined;
+        const minSleeps = searchParams.get('minSleeps') ? parseInt(searchParams.get('minSleeps')!) : undefined;
+        const maxSleeps = searchParams.get('maxSleeps') ? parseInt(searchParams.get('maxSleeps')!) : undefined;
 
         const params: SearchParams = {};
 
@@ -91,6 +93,8 @@ function SearchPageContent() {
         if (start && end) params.dates = { startDate: start, endDate: end };
         if (adults || children) params.guests = { adults, children };
         if (facilities && facilities.length > 0) params.facilities = facilities;
+        if (minSleeps) params.minSleeps = minSleeps;
+        if (maxSleeps) params.maxSleeps = maxSleeps;
 
         const villas = await searchVillas(params);
 
