@@ -626,7 +626,7 @@ function CategoriesSection({ countryName }: { countryName: string }) {
         </h2>
       </div>
 
-      <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="max-w-7xl mx-auto grid grid-cols-2 gap-3 md:gap-6">
         {CATEGORIES.map((cat) => (
           <Link
             key={cat.id}
