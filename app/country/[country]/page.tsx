@@ -284,7 +284,7 @@ export default async function CountryLandingPage({ params }: PageProps) {
       <FeaturedVillasSection villas={countryVillas} countryName={config.name} />
 
       {/* Categories */}
-      <CategoriesSection countryName={config.name} />
+      <CategoriesSection countryName={config.name} countrySlug={country} />
 
       {/* Testimonials */}
       <TestimonialsSection />
@@ -608,15 +608,15 @@ function VillaCard({ villa }: { villa: MockVilla }) {
 // ===== CATEGORIES SECTION =====
 
 const CATEGORIES = [
-  { id: 1, title: "Villas with children's pools", image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=600&h=400&fit=crop&q=80', href: "/search?facilities=Children's Pool,Fenced/Gated Pool" },
-  { id: 2, title: 'Villas for couples', image: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=600&h=400&fit=crop&q=80', href: '/search?maxSleeps=4' },
-  { id: 3, title: 'Large villas', image: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=600&h=400&fit=crop&q=80', href: '/search?minSleeps=8' },
-  { id: 4, title: 'Car not essential', image: 'https://images.unsplash.com/photo-1499793983690-e29da59ef1c2?w=600&h=400&fit=crop&q=80', href: '/search?facilities=Car NOT Essential' },
-  { id: 5, title: 'Villas near beaches', image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600&h=400&fit=crop&q=80', href: '/search?facilities=Beach - Walk (within 1.5km)' },
-  { id: 6, title: 'Secluded villas', image: 'https://images.unsplash.com/photo-1600585154526-990dced4db0d?w=600&h=400&fit=crop&q=80', href: '/search?facilities=Grounds offer TOTAL PRIVACY' },
+  { id: 1, title: 'Family-friendly villas', image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=600&h=400&fit=crop&q=80', slug: 'family-friendly-villas' },
+  { id: 2, title: 'Villas for couples', image: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=600&h=400&fit=crop&q=80', slug: 'villas-for-couples' },
+  { id: 3, title: 'Large villas', image: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=600&h=400&fit=crop&q=80', slug: 'large-villas' },
+  { id: 4, title: 'Car-free villas', image: 'https://images.unsplash.com/photo-1499793983690-e29da59ef1c2?w=600&h=400&fit=crop&q=80', slug: 'car-free-villas' },
+  { id: 5, title: 'Beachside villas', image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600&h=400&fit=crop&q=80', slug: 'beachside-villas' },
+  { id: 6, title: 'Secluded villas', image: 'https://images.unsplash.com/photo-1600585154526-990dced4db0d?w=600&h=400&fit=crop&q=80', slug: 'secluded-villas' },
 ];
 
-function CategoriesSection({ countryName }: { countryName: string }) {
+function CategoriesSection({ countryName, countrySlug }: { countryName: string; countrySlug: string }) {
   return (
     <section className="bg-[#F3F0E9] py-20 px-6 md:px-20">
       <div className="text-center mb-16">
@@ -630,7 +630,7 @@ function CategoriesSection({ countryName }: { countryName: string }) {
         {CATEGORIES.map((cat) => (
           <Link
             key={cat.id}
-            href={`${cat.href}&country=${encodeURIComponent(countryName)}`}
+            href={`/${countrySlug}/${cat.slug}`}
             className="relative h-64 group cursor-pointer overflow-hidden block"
           >
             <Image
