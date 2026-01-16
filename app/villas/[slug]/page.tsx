@@ -16,6 +16,7 @@ import { AvailabilityCalendar } from '@/components/ui/availability-calendar';
 import { HeroGallery } from '@/components/villa/hero-gallery';
 import { AccordionItem } from '@/components/villa/info-accordion';
 import { ClimateWidget } from '@/components/villa/climate-widget';
+import { FavouriteButton } from '@/components/ui/favourite-button';
 
 interface VillaPageProps {
   params: Promise<{
@@ -136,7 +137,10 @@ export default async function VillaPage({ params, searchParams }: VillaPageProps
           {/* Left Content Column (8/12) */}
           <div className="lg:col-span-8">
             {/* Title & Location */}
-            <h1 className="font-serif text-4xl md:text-5xl text-vintage-green mb-2">{villa.title}</h1>
+            <div className="flex items-start justify-between gap-4 mb-2">
+              <h1 className="font-serif text-4xl md:text-5xl text-vintage-green">{villa.title}</h1>
+              <FavouriteButton villaId={villa.id} size="lg" />
+            </div>
             <p className="text-lg text-gray-500 mb-6 font-serif italic flex items-center gap-2">
               <MapPin size={18} className="text-vintage-gold" />
               {villa.town ? `${villa.town}, ` : ''}{villa.region}{villa.country ? `, ${villa.country}` : ''}
