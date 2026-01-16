@@ -11,7 +11,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { getAllVillas } from '@/lib/crm-client';
 import { MockVilla } from '@/lib/mock-db';
-import { MapPin, Search, ShieldCheck, Users, BedDouble, Bath, Star } from 'lucide-react';
+import { MapPin, Search, ShieldCheck, Users, BedDouble, Bath, Star, Phone } from 'lucide-react';
 import { TownExplorer } from '@/components/llp/town-explorer';
 import { HeroSearch } from '@/components/hero-search';
 import { getClimateAverages } from '@/lib/weather';
@@ -662,37 +662,64 @@ function ValuePropsSection() {
     {
       icon: MapPin,
       title: 'Reps in location',
-      description: 'Our local representatives are on hand throughout your stay to ensure everything runs smoothly.',
+      description: 'Our representatives are based in each destination, ensuring you have local support throughout your stay.',
+      linkText: 'Learn More',
+      linkUrl: '/about',
     },
     {
       icon: Search,
       title: 'Personally inspected',
-      description: 'Every villa in our collection has been personally inspected by our team.',
+      description: 'Every villa has been personally visited and carefully selected by our team of travel specialists.',
+      linkText: 'Learn More',
+      linkUrl: '/about',
     },
     {
-      icon: ShieldCheck,
-      title: 'ABTA protected',
-      description: 'Book with confidence knowing your holiday is fully protected.',
+      icon: Star,
+      title: 'Expert knowledge',
+      description: 'With over 30 years of experience, we provide insider tips and personalized recommendations.',
+      linkText: 'Learn More',
+      linkUrl: '/about',
+    },
+    {
+      icon: Phone,
+      title: 'UK-based support',
+      description: 'Our friendly team is available by phone or email to help you plan and book your perfect villa holiday.',
+      linkText: 'Contact Us',
+      linkUrl: '/contact',
     },
   ];
 
   return (
-    <section className="bg-[#F9F7F2] pb-10 md:pb-16 px-4 md:px-20 border-b border-gray-200">
-      <div className="text-center mb-6 md:mb-10">
-        <h3 className="text-xl md:text-2xl font-serif text-[#3A443C]">Why book with Vintage?</h3>
-      </div>
+    <section className="py-8 md:py-12 bg-white">
+      <div className="max-w-7xl mx-auto px-4 md:px-6">
+        <div className="text-center mb-6 md:mb-8">
+          <h3 className="text-xl md:text-2xl font-serif text-[#3A443C] italic">Why book with Vintage?</h3>
+        </div>
 
-      <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-8 text-center">
-        {props.map((prop, index) => (
-          <div key={index} className="flex flex-col items-center px-2 md:px-4">
-            <div className="mb-3 md:mb-4 p-2 md:p-3 border-2 border-gray-800 rounded-full">
-              <prop.icon size={20} className="md:hidden text-gray-800" strokeWidth={1.5} />
-              <prop.icon size={28} className="hidden md:block text-gray-800" strokeWidth={1.5} />
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-12">
+          {props.map((prop, index) => (
+            <div key={index} className="text-center group">
+              <div className="mb-3 md:mb-6 flex justify-center transform transition-transform group-hover:scale-110 duration-500">
+                <div className="md:hidden">
+                  <prop.icon className="w-8 h-8 text-[#3A443C] stroke-[1]" />
+                </div>
+                <div className="hidden md:block">
+                  <prop.icon className="w-10 h-10 text-[#3A443C] stroke-[1]" />
+                </div>
+              </div>
+              <h4 className="text-sm md:text-xl font-serif mb-2 md:mb-4">{prop.title}</h4>
+              <p className="text-gray-500 text-xs md:text-sm leading-relaxed mb-3 md:mb-6 line-clamp-3 md:line-clamp-none">
+                {prop.description}
+              </p>
+              <Link
+                href={prop.linkUrl}
+                className="text-[10px] md:text-xs font-bold uppercase tracking-widest border-b border-gray-300 pb-1 hover:border-[#3A443C] transition-colors"
+              >
+                {prop.linkText}
+              </Link>
             </div>
-            <h4 className="text-sm md:text-lg font-serif mb-1 md:mb-2">{prop.title}</h4>
-            <p className="text-xs md:text-sm text-gray-500 line-clamp-3 md:line-clamp-none">{prop.description}</p>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </section>
   );
