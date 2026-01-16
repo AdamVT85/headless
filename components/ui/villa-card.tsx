@@ -10,6 +10,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Users, Bed } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { FavouriteButton } from "./favourite-button";
 
 export interface VillaCardProps {
   id: string;
@@ -71,6 +72,11 @@ export function VillaCard({
             e.currentTarget.src = '/placeholder-villa.svg';
           }}
         />
+
+        {/* Favourite button */}
+        <div className="absolute top-3 left-3">
+          <FavouriteButton villaId={id} size="sm" />
+        </div>
 
         {/* Minimal overlay badge - show town, fallback to region */}
         <div className="absolute top-3 right-3">

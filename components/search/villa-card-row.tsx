@@ -12,6 +12,7 @@ import Image from 'next/image';
 import { Users, Bed } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { MockVilla } from '@/lib/mock-db';
+import { FavouriteButton } from '@/components/ui/favourite-button';
 
 interface VillaCardRowProps {
   villa: MockVilla;
@@ -75,6 +76,11 @@ export const VillaCardRow = forwardRef<HTMLDivElement, VillaCardRowProps>(
               className="object-cover transition-transform duration-500 group-hover:scale-105"
               sizes="200px"
             />
+            {/* Favourite button */}
+            <div className="absolute top-2 right-2">
+              <FavouriteButton villaId={villa.id} size="sm" />
+            </div>
+
             {/* Location badge */}
             <div className="absolute top-2 left-2">
               <span className="bg-white/90 px-2 py-0.5 rounded-sm text-[10px] font-semibold text-olive backdrop-blur-sm">

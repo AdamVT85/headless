@@ -14,12 +14,15 @@ import { cn } from '@/lib/utils';
 import { TopBar } from './top-bar';
 import { MegaMenu } from './mega-menu';
 import { VillasForMenu } from './villas-for-menu';
+import { useFavourites } from '@/contexts/favourites-context';
 
 export function Navigation() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isLocationsOpen, setIsLocationsOpen] = useState(false);
   const [isVillasForOpen, setIsVillasForOpen] = useState(false);
   const pathname = usePathname();
+  const { favourites } = useFavourites();
+  const favouriteCount = favourites.length;
 
   const isActive = (href: string) => {
     if (href === '/') {
@@ -121,8 +124,13 @@ export function Navigation() {
             </Link>
 
             {/* Favorites */}
-            <Link href="/favorites" className="hover:text-terracotta transition-colors">
+            <Link href="/favorites" className="relative hover:text-terracotta transition-colors">
               <Heart className="fill-vintage-green text-vintage-green hover:fill-terracotta hover:text-terracotta transition-colors" size={20} />
+              {favouriteCount > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 bg-terracotta text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center">
+                  {favouriteCount > 9 ? '9+' : favouriteCount}
+                </span>
+              )}
             </Link>
           </div>
 
@@ -247,6 +255,11 @@ export function Navigation() {
               >
                 <Heart className="h-4 w-4" />
                 Favorites
+                {favouriteCount > 0 && (
+                  <span className="bg-terracotta text-white text-[10px] font-bold rounded-full h-4 min-w-4 px-1 flex items-center justify-center">
+                    {favouriteCount > 9 ? '9+' : favouriteCount}
+                  </span>
+                )}
               </Link>
             </div>
           </div>
