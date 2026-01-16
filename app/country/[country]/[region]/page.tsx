@@ -35,61 +35,65 @@ const normalize = (str: string) => str?.toLowerCase().replace(/[^a-z0-9]/g, '') 
 
 // Sub-region mapping: maps sub-regions/towns to their parent regions
 // This handles cases where the CRM stores sub-region names instead of parent region names
+// Synced with search-client.ts REGION_HIERARCHY for consistency
 const SUB_REGION_MAPPING: Record<string, string[]> = {
   // Spain - Catalunya (includes Costa Brava)
-  'catalunya': ['costa brava', 'tamariu', 'palafrugell', 'calella de palafrugell', 'begur', 'llafranc', 'palafrugell area', 'aiguablava', 'fornells', 'emporda'],
+  'catalunya': ['costa brava', 'tamariu', 'palafrugell', 'palafrugell area', 'calella de palafrugell', 'begur', 'llafranc', 'aiguablava', 'fornells', 'emporda', 'calonge area', 'pals', 'les arques'],
   // Spain - Galicia
   'galicia': ['cangas', 'cesantes', 'nigran', 'gondomar', 'vigo', 'rias baixas', 'pontevedra', 'sanxenxo', 'sanxenxo and surrounding villages', 'mondariz balneario', 'negreira', 'hio', 'o porriño', 'o porrino'],
   // Spain - Andalucia
-  'andalucia': ['el bosque', 'conil de la frontera', 'orgiva', 'ronda', 'grazalema', 'alpujarras', 'costa de la luz', 'vejer', 'tarifa', 'cadiz', 'jerez', 'seville', 'granada', 'malaga', 'marbella', 'nerja', 'frigiliana'],
+  'andalucia': ['el bosque', 'conil de la frontera', 'orgiva', 'ronda', 'grazalema', 'alpujarras', 'costa de la luz', 'vejer', 'vejer de la frontera', 'tarifa', 'cadiz', 'jerez', 'seville', 'granada', 'malaga', 'marbella', 'nerja', 'frigiliana', 'arcos de la frontera'],
   // Spain - Costa Blanca
-  'costa-blanca': ['javea', 'moraira', 'denia', 'calpe', 'altea', 'benidorm', 'alicante', 'orihuela', 'torrevieja', 'xabia'],
+  'costa-blanca': ['javea', 'moraira', 'denia', 'calpe', 'altea', 'benidorm', 'alicante', 'orihuela', 'torrevieja', 'xabia', 'xabia (javea)', 'benitachell', 'teulada/moraira', 'teulada'],
   // France - Provence
-  'provence': ['saint remy de provence', 'st remy', 'avignon', 'aix en provence', 'luberon', 'alpilles', 'gordes', 'roussillon', 'bonnieux', 'menerbes', 'lacoste', 'apt', 'pernes les fontaines'],
+  'provence': ['saint remy de provence', 'saint rémy de provence', 'st remy', 'avignon', 'aix en provence', 'luberon', 'alpilles', 'gordes', 'roussillon', 'bonnieux', 'menerbes', 'lacoste', 'apt', 'pernes les fontaines', 'lourmarin', 'villars'],
   // France - Cote d'Azur
-  'cote-dazur': ['nice', 'cannes', 'antibes', 'grasse', 'vence', 'saint paul de vence', 'mougins', 'biot', 'eze', 'menton', 'villefranche'],
+  'cote-dazur': ['nice', 'cannes', 'antibes', 'grasse', 'vence', 'saint paul de vence', 'mougins', 'biot', 'eze', 'menton', 'villefranche', 'st cézaire sur siagne', 'st cezaire sur siagne', 'la garde-freinet', 'sainte-maxime', 'saint tropez', 'saint-tropez'],
   // France - South West France
-  'south-west-france': ['bergerac', 'dordogne', 'lot', 'sarlat', 'cahors', 'najac', 'rabastens', 'sainte foy la grande', 'bordeaux', 'perigord', 'quercy'],
+  'south-west-france': ['bergerac', 'dordogne', 'lot', 'sarlat', 'cahors', 'najac', 'rabastens', 'sainte foy la grande', 'bordeaux', 'perigord', 'quercy', 'miramont-de-guyenne', 'castillonnès', 'castillonnes', 'lorgues', 'villeréal', 'villereal', 'montcuq', 'duras', 'prats-du-périgord', 'prats-du-perigord', 'monflanquin', 'albi', 'carcassonne'],
   // France - Languedoc
-  'languedoc': ['carcassonne', 'narbonne', 'montpellier', 'beziers', 'uzes', 'nimes', 'perpignan'],
+  'languedoc': ['carcassonne', 'narbonne', 'montpellier', 'beziers', 'uzes', 'nimes', 'perpignan', 'pézenas', 'pezenas'],
   // Italy - Tuscany
-  'tuscany': ['bagni di lucca', 'lucca', 'florence', 'siena', 'pisa', 'chianti', 'cortona', 'arezzo', 'montepulciano', 'montalcino', 'san gimignano', 'volterra'],
+  'tuscany': ['bagni di lucca', 'lucca', 'florence', 'siena', 'pisa', 'chianti', 'cortona', 'arezzo', 'montepulciano', 'montalcino', 'san gimignano', 'volterra', 'pienza'],
   // Italy - Umbria
-  'umbria': ['perugia', 'assisi', 'spoleto', 'orvieto', 'todi', 'gubbio', 'norcia', 'foligno'],
+  'umbria': ['perugia', 'assisi', 'spoleto', 'orvieto', 'todi', 'gubbio', 'norcia', 'foligno', 'deruta'],
   // Italy - Puglia
   'puglia': ['lecce', 'ostuni', 'alberobello', 'polignano', 'monopoli', 'bari', 'brindisi', 'otranto', 'gallipoli', 'martina franca'],
   // Italy - Lazio
-  'lazio': ['rome', 'roma', 'viterbo', 'tivoli', 'bracciano', 'civita di bagnoregio'],
+  'lazio': ['rome', 'roma', 'viterbo', 'tivoli', 'bracciano', 'civita di bagnoregio', 'bolsena'],
   // Greece - Kefalonia
-  'kefalonia': ['fiskardo', 'fiscardo', 'assos', 'agia efimia', 'sami', 'argostoli', 'lixouri', 'skala', 'lourdas', 'spartia'],
+  'kefalonia': ['fiskardo', 'fiscardo', 'assos', 'agia efimia', 'agia effimia', 'sami', 'argostoli', 'lixouri', 'skala', 'lourdas', 'spartia', 'svoronata', 'trapezaki', 'avithos', 'antisamos', 'katelios', 'poros', 'pessada'],
   // Greece - Corfu
-  'corfu': ['kassiopi', 'sidari', 'paleokastritsa', 'benitses', 'gouvia', 'dassia', 'kontokali', 'agios stefanos', 'acharavi', 'roda'],
+  'corfu': ['kassiopi', 'sidari', 'paleokastritsa', 'benitses', 'gouvia', 'dassia', 'kontokali', 'agios stefanos', 'aghios stefanos', 'san stefanos', 'acharavi', 'roda', 'ermones', 'nissaki', 'barbati', 'perithea', 'agios georgios', 'corfu town'],
   // Greece - Lefkada
-  'lefkada': ['nidri', 'vasiliki', 'sivota', 'agios nikitas', 'lefkas'],
+  'lefkada': ['nidri', 'nydri', 'vasiliki', 'vassiliki', 'sivota', 'agios nikitas', 'lefkas', 'kathisma', 'lefkada town'],
   // Greece - Crete
-  'crete': ['chania', 'chania area', 'rethymno', 'heraklion', 'agios nikolaos', 'elounda', 'ierapetra', 'sitia'],
+  'crete': ['chania', 'chania area', 'rethymno', 'heraklion', 'agios nikolaos', 'elounda', 'ierapetra', 'sitia', 'tavronitis', 'platanias', 'maleme', 'kalives', 'almyrida', 'georgioupolis'],
   // Greece - Zakynthos
-  'zakynthos': ['zante', 'tsilivi', 'laganas', 'kalamaki', 'vasilikos', 'alykes'],
-  // Greece - Peloponnese
-  'peloponnese': ['messinia', 'navarino bay', 'stoupa', 'kardamyli', 'mani', 'kalamata', 'olympia', 'nafplio', 'monemvasia', 'mystras'],
+  'zakynthos': ['zante', 'tsilivi', 'laganas', 'kalamaki', 'vasilikos', 'vassilikos', 'alykes', 'kalipado', 'machairado', 'agios nikolaos'],
+  // Greece - Peloponnese / Messinia
+  'peloponnese': ['messinia', 'navarino bay', 'stoupa', 'kardamyli', 'mani', 'kalamata', 'olympia', 'nafplio', 'monemvasia', 'mystras', 'methoni', 'koroni'],
+  'messinia': ['navarino bay', 'stoupa', 'kardamyli', 'kalamata', 'methoni', 'koroni'],
   // Greece - Parga
-  'parga': ['sivota', 'perdika', 'ammoudia'],
+  'parga': ['sivota', 'perdika', 'ammoudia', 'parga town'],
   // Greece - Meganisi
   'meganisi': ['vathi', 'spartochori', 'katomeri'],
   // Portugal - Algarve
-  'algarve': ['carvoeiro', 'estoi', 'faro', 'albufeira', 'vilamoura', 'lagos', 'portimao', 'tavira', 'olhao', 'loulé', 'silves', 'monchique', 'quinta do lago', 'vale do lobo'],
+  'algarve': ['carvoeiro', 'estoi', 'faro', 'albufeira', 'vilamoura', 'lagos', 'portimao', 'tavira', 'olhao', 'loulé', 'loule', 'silves', 'monchique', 'quinta do lago', 'vale do lobo', 'boliqueime', 'gale', 'almancil'],
   // Portugal - Costa Verde & Minho
-  'costa-verde-minho': ['povoa de lanhoso', 'braga', 'guimaraes', 'porto', 'viana do castelo', 'ponte de lima'],
+  'costa-verde-minho': ['povoa de lanhoso', 'braga', 'guimaraes', 'porto', 'viana do castelo', 'ponte de lima', 'vila praia de ancora', 'caminha', 'esposende', 'vila verde', 'gondomar'],
   // Croatia - Dubrovnik
   'dubrovnik': ['konavle', 'konavle valley', 'cavtat', 'mlini', 'srebreno', 'zaton'],
   // Croatia - Istria
-  'istria': ['rovinj', 'pula', 'porec', 'umag', 'motovun', 'groznjan', 'buzet', 'labin', 'rabac'],
-  // Turkey - Lycian Coast
-  'lycian-coast': ['kalkan', 'kas', 'fethiye', 'oludeniz', 'kayakoy', 'dalyan', 'gocek', 'bodrum', 'marmaris'],
+  'istria': ['rovinj', 'pula', 'porec', 'umag', 'motovun', 'groznjan', 'buzet', 'labin', 'rabac', 'sveti lovrec', 'svetvincenat', 'novigrad', 'liznjan'],
+  // Turkey - Lycian Coast / Kalkan / Kas
+  'lycian-coast': ['kalkan', 'kas', 'fethiye', 'oludeniz', 'kayakoy', 'dalyan', 'gocek', 'bodrum', 'marmaris', 'patara'],
+  'kalkan': ['kalkan'],
+  'kas': ['kas'],
   // Balearics - Mallorca
-  'mallorca': ['pollenca', 'pollensa', 'port de pollenca', 'alcudia', 'port d\'alcudia', 'soller', 'port de soller', 'deia', 'valldemossa', 'andratx', 'cala d\'or', 'santanyi', 'campos', 'felanitx', 'manacor', 'arta', 'capdepera', 'palma', 'calvia', 'santa ponsa', 'cas concos', 'ca\'s concos', 'binissalem', 'cala sa nau', 'portocolom', 'buger'],
+  'mallorca': ['pollenca', 'pollensa', 'port de pollenca', 'puerto pollensa', 'alcudia', 'port d\'alcudia', 'soller', 'port de soller', 'deia', 'valldemossa', 'andratx', 'cala d\'or', 'santanyi', 'campos', 'felanitx', 'manacor', 'arta', 'capdepera', 'palma', 'calvia', 'santa ponsa', 'cas concos', 'ca\'s concos', 'binissalem', 'cala sa nau', 'portocolom', 'buger'],
   // Balearics - Menorca
-  'menorca': ['mahon', 'ciutadella', 'alaior', 'ferreries', 'es mercadal', 'fornells', 'binibeca', 'cala en porter', 'son bou', 'torre soli'],
+  'menorca': ['mahon', 'ciutadella', 'alaior', 'ferreries', 'es mercadal', 'fornells', 'binibeca', 'cala en porter', 'son bou', 'torre soli', 'arenal d\'en castell', 'es castell'],
 };
 
 // Helper to check if a villa's region matches the parent region or is a sub-region
