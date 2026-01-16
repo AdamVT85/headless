@@ -81,6 +81,14 @@ const defaultData: HomePageData = {
       linkText: 'Learn More',
       linkUrl: '/about',
     },
+    {
+      _key: '4',
+      icon: 'phone',
+      title: 'UK-based support',
+      description: 'Our friendly team is available by phone or email to help you plan and book your perfect villa holiday.',
+      linkText: 'Contact Us',
+      linkUrl: '/contact',
+    },
   ],
   collectionsSectionTitle: 'Our hottest collections',
   collectionsCtaText: 'Search All Villas',
@@ -291,7 +299,7 @@ function USPSection({ data }: { data: HomePageData }) {
             {data.uspSectionTitle || 'Why book with Vintage?'}
           </h3>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-16">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-12">
           {usps.map((usp) => (
             <div key={usp._key} className="text-center group">
               <div className="mb-3 md:mb-6 flex justify-center transform transition-transform group-hover:scale-110 duration-500">
@@ -548,7 +556,7 @@ function VillasForXGrid({ data }: { data: HomePageData }) {
           </h2>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-3 gap-3 md:gap-8">
           {categories.map((card, i) => {
             const imageUrl = getImageUrl(card.image, 600) || fallbackImages.categories[i % fallbackImages.categories.length];
             const description = card.description || `Discover our selection of ${card.title.toLowerCase()} perfect for your Mediterranean escape.`;

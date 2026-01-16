@@ -27,6 +27,9 @@ export interface SearchParams {
   bedrooms?: number;
   minPrice?: number;
   maxPrice?: number;
+
+  // Facility filters (AND logic - villa must have ALL selected facilities)
+  facilities?: string[]; // Array of facility names to filter by
 }
 
 export interface SearchResults {

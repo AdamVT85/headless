@@ -9,6 +9,7 @@ import { media } from 'sanity-plugin-media';
 // Note: visionTool temporarily removed due to version compatibility
 // import { visionTool } from '@sanity/vision';
 import { schemaTypes } from './sanity/schemas';
+import { SyncFacilitiesAction } from './sanity/actions/syncFacilitiesAction';
 
 const projectId = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID || '';
 const dataset = process.env.NEXT_PUBLIC_SANITY_DATASET || 'production';
@@ -125,6 +126,19 @@ export default defineConfig({
 
             S.divider(),
 
+            // === SETTINGS & TOOLS ===
+            S.listItem()
+              .title('Data Sync')
+              .icon(() => '🔄')
+              .child(
+                S.document()
+                  .schemaType('dataSync')
+                  .documentId('dataSync')
+                  .title('Data Sync Settings')
+              ),
+
+            S.divider(),
+
             // === LEGACY (for migration) ===
             S.listItem()
               .title('Legacy: Destinations')
@@ -140,5 +154,15 @@ export default defineConfig({
 
   schema: {
     types: schemaTypes,
+  },
+
+  document: {
+    actions: (prev, context) => {
+      // Add SyncFacilitiesAction only for dataSync documents
+      if (context.schemaType === 'dataSync') {
+        return [SyncFacilitiesAction, ...prev];
+      }
+      return prev;
+    },
   },
 });

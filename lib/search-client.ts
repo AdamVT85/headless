@@ -232,6 +232,24 @@ export async function searchVillas(params: SearchParams): Promise<MockVilla[]> {
       }
     }
 
+    // 4.5. Filter by Facilities (AND logic - villa must have ALL selected facilities)
+    if (params.facilities && params.facilities.length > 0) {
+      const requiredFacilities = params.facilities.map(f => f.toLowerCase().trim());
+      console.log(`[SEARCH] Filtering by facilities: ${requiredFacilities.join(', ')}`);
+
+      villas = villas.filter(villa => {
+        // Get villa's facilities (normalized to lowercase)
+        const villaFacilities = (villa.facilities || []).map(f => f.toLowerCase().trim());
+
+        // Check if villa has ALL required facilities (AND logic) - EXACT MATCH
+        return requiredFacilities.every(required =>
+          villaFacilities.some(villaFac => villaFac === required)
+        );
+      });
+
+      console.log(`[SEARCH] After facility filter: ${villas.length} villas`);
+    }
+
     // 5. Filter by Availability (Bulk Check) and get date-specific pricing
     let dateSpecificPrices: Record<string, number> = {};
     if (params.dates?.startDate && params.dates?.endDate) {
@@ -290,6 +308,7 @@ export async function searchVillas(params: SearchParams): Promise<MockVilla[]> {
         galleryImages: v.galleryImages,
         description: '', // ⚠️ STRIPPED: Not needed for grid card
         amenities: [], // ⚠️ STRIPPED: Not needed for grid card
+        facilities: v.facilities || [], // Include facilities for potential badge display
 
         // Capacity
         maxGuests: v.maxGuests,

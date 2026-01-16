@@ -17,12 +17,14 @@ import villa from './villa';
 import location from './location';
 import navigation, { navigationItem } from './navigation';
 import pageHome from './pageHome';
+import dataSync from './dataSync';
 
 export const schemaTypes = [
   // === SINGLETONS ===
   aboutPage,
   essentialInfoPage,
   pageHome,
+  dataSync,
 
   // === MEDIA-FIRST CONTENT ===
   villa,          // Primary source for villa photography

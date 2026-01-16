@@ -19,6 +19,7 @@ import { SearchParams } from '@/types/search';
 import { VillaCard, VillaCardSkeleton, VillaCardGrid } from '@/components/ui/villa-card';
 import { VillaCardRow, VillaCardRowSkeleton } from '@/components/search/villa-card-row';
 import { InteractiveFilterPills } from '@/components/search/interactive-filter-pills';
+import { FacilityFilter } from '@/components/search/facility-filter';
 import { cn } from '@/lib/utils';
 
 // Dynamic import for MapView (client-side only, no SSR)
@@ -77,6 +78,7 @@ function SearchPageContent() {
         const end = searchParams.get('end') || undefined;
         const adults = searchParams.get('adults') ? parseInt(searchParams.get('adults')!) : undefined;
         const children = searchParams.get('children') ? parseInt(searchParams.get('children')!) : undefined;
+        const facilities = searchParams.get('facilities')?.split(',').filter(Boolean) || undefined;
 
         const params: SearchParams = {};
 
@@ -88,6 +90,7 @@ function SearchPageContent() {
         if (country) params.country = country;
         if (start && end) params.dates = { startDate: start, endDate: end };
         if (adults || children) params.guests = { adults, children };
+        if (facilities && facilities.length > 0) params.facilities = facilities;
 
         const villas = await searchVillas(params);
 
@@ -181,8 +184,10 @@ function SearchPageContent() {
           </div>
 
           {/* Filter Pills and Map Toggle */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mt-6">
-            <InteractiveFilterPills />
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mt-6">
+            <div className="flex flex-wrap items-start gap-3">
+              <InteractiveFilterPills />
+            </div>
 
             {/* Map View Toggle */}
             <button
@@ -221,13 +226,14 @@ function SearchPageContent() {
             className="w-1/2 overflow-y-auto border-r border-stone-200 bg-white"
           >
             <div className="p-4">
-              {/* Results Count */}
+              {/* Results Count and Filter */}
               {results && !loading && (
-                <div className="mb-4 pb-4 border-b border-stone-100">
+                <div className="mb-4 pb-4 border-b border-stone-100 flex items-center justify-between">
                   <p className="font-sans text-stone-700">
                     <span className="font-bold text-olive">{results?.totalCount}</span>{' '}
                     {results?.totalCount === 1 ? 'villa' : 'villas'} found
                   </p>
+                  <FacilityFilter villas={results.villas} />
                 </div>
               )}
 
@@ -314,13 +320,14 @@ function SearchPageContent() {
       ) : (
         // Standard Grid View
         <section className="container mx-auto px-6 py-12">
-          {/* Results Count */}
+          {/* Results Count and Filter */}
           {results && !loading && (
-            <div className="mb-8">
+            <div className="mb-8 flex items-center justify-between">
               <p className="font-sans text-stone-700">
                 <span className="font-bold text-olive">{results?.totalCount}</span>{' '}
                 {results?.totalCount === 1 ? 'villa' : 'villas'} found
               </p>
+              <FacilityFilter villas={results.villas} />
             </div>
           )}
 

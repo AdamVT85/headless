@@ -11,6 +11,8 @@ import { MockVilla } from '@/lib/mock-db';
 import { WeeklyRate } from '@/types/villa';
 import { addWeeks, startOfDay, parseISO, format, addDays } from 'date-fns';
 import { mapCRMVillasToVillas } from '@/lib/mappers/crm-mapper';
+import { readFileSync, existsSync } from 'fs';
+import path from 'path';
 
 // ===== CONFIGURATION =====
 
@@ -78,6 +80,104 @@ export interface SalesforceWeeklyRateRecord {
   WR_Week_Start_Date__c: string;
   WR_Live_Sell_This_Year__c: number | null;
   WR_Status__c: string;
+}
+
+/**
+ * Salesforce Facility record (master list of facilities)
+ */
+export interface SalesforceFacilityRecord {
+  Id: string;
+  Name: string;
+  F_Type__c?: string;
+}
+
+/**
+ * Salesforce Property Facility record (junction object)
+ * Links villas to their facilities
+ */
+export interface SalesforcePropertyFacilityRecord {
+  Id: string;
+  PF_Property__c: string; // Villa ID
+  PF_Facility__c: string; // Facility ID
+  PF_Facility__r?: {
+    Id: string;
+    Name: string;
+    F_Type__c?: string;
+  };
+}
+
+/**
+ * Facility data structure for the app
+ */
+export interface Facility {
+  id: string;
+  name: string;
+  type?: string;
+}
+
+/**
+ * Cached facility data structure (from villa-facilities.json)
+ */
+interface CachedFacilityData {
+  lastSynced: string | null;
+  syncedBy: string | null;
+  villaFacilities: Record<string, string[]>;
+  allFacilities: Facility[];
+}
+
+// In-memory cache for facility data (loaded once per server instance)
+let cachedFacilityData: CachedFacilityData | null = null;
+
+/**
+ * Get cached villa facilities from local JSON file
+ * Returns a Map of villa ID -> facility names
+ * Falls back to empty map if file doesn't exist or is invalid
+ */
+function getCachedVillaFacilities(): Map<string, string[]> {
+  // Return cached data if already loaded
+  if (cachedFacilityData) {
+    const map = new Map<string, string[]>();
+    Object.entries(cachedFacilityData.villaFacilities).forEach(([villaId, facilities]) => {
+      map.set(villaId, facilities);
+    });
+    return map;
+  }
+
+  try {
+    const filePath = path.join(process.cwd(), 'data', 'villa-facilities.json');
+
+    if (!existsSync(filePath)) {
+      console.warn('[CRM FACILITIES] No cached facility data found at', filePath);
+      console.warn('[CRM FACILITIES] Run /api/sync-facilities to populate facility data');
+      return new Map();
+    }
+
+    const fileContent = readFileSync(filePath, 'utf-8');
+    cachedFacilityData = JSON.parse(fileContent) as CachedFacilityData;
+
+    console.log(`[CRM FACILITIES] Loaded cached facility data (synced: ${cachedFacilityData.lastSynced || 'never'})`);
+
+    const map = new Map<string, string[]>();
+    Object.entries(cachedFacilityData.villaFacilities).forEach(([villaId, facilities]) => {
+      map.set(villaId, facilities);
+    });
+
+    console.log(`[CRM FACILITIES] Loaded facilities for ${map.size} villas from cache`);
+    return map;
+
+  } catch (error) {
+    console.error('[CRM FACILITIES] Error loading cached facilities:', error);
+    return new Map();
+  }
+}
+
+/**
+ * Clear the in-memory facility cache
+ * Call this after syncing new data to force reload
+ */
+export function clearFacilityCache(): void {
+  cachedFacilityData = null;
+  console.log('[CRM FACILITIES] Facility cache cleared');
 }
 
 // ===== CONNECTION MANAGEMENT =====
@@ -295,6 +395,19 @@ export async function getAllVillas(): Promise<MockVilla[]> {
     }));
 
     console.log(`[CRM DEBUG] ✓ Updated ${Object.keys(lowestPrices).length} villas with pricing`);
+
+    // Step 6.6: Load facilities from local cache (no Salesforce call!)
+    console.log('[CRM DEBUG] Step 6.6: Loading villa facilities from cache...');
+    const villaFacilityMap = getCachedVillaFacilities();
+
+    // Update villas with their facilities
+    mappedVillas = mappedVillas.map(villa => ({
+      ...villa,
+      facilities: villaFacilityMap.get(villa.id) || [],
+    }));
+
+    const villasWithFacilities = mappedVillas.filter(v => v.facilities && v.facilities.length > 0).length;
+    console.log(`[CRM DEBUG] ✓ Updated ${villasWithFacilities} villas with facilities (from cache)`);
 
     // PHASE 28: Inject placeholder images for villas missing photos
     console.log('[CRM DEBUG] Step 7: Injecting placeholder images...');
@@ -679,4 +792,117 @@ export async function getUnavailableVillaIds(
     console.error('[CRM ERROR] Bulk Check Failed:', error);
     return new Set();
   }
+}
+
+// ===== FACILITY DATA FETCHING =====
+
+/**
+ * Fetch all facilities from Salesforce (master list)
+ * Used for populating filter options
+ *
+ * @returns Array of all facilities with their types
+ */
+export async function getAllFacilities(): Promise<Facility[]> {
+  try {
+    console.log('[CRM FACILITIES] Fetching all facilities...');
+    const connection = await getConn();
+
+    const result = await connection.query<SalesforceFacilityRecord>(
+      `SELECT Id, Name, F_Type__c
+       FROM Facility__c
+       WHERE F_Use_in_Web_Search__c = true
+       ORDER BY F_Type__c, Name`
+    );
+
+    const facilities: Facility[] = result.records.map(record => ({
+      id: record.Id,
+      name: record.Name,
+      type: record.F_Type__c,
+    }));
+
+    console.log(`[CRM FACILITIES] Found ${facilities.length} facilities`);
+    return facilities;
+
+  } catch (error: any) {
+    console.error('[CRM FACILITIES] Error fetching facilities:', error);
+    if (error.errorCode === 'INVALID_TYPE') {
+      console.error('[CRM FACILITIES] 👉 HINT: Facility__c object does not exist in Salesforce');
+    }
+    return [];
+  }
+}
+
+/**
+ * Fetch facility assignments for all villas
+ * Returns a map of villa ID -> array of facility names
+ *
+ * @returns Map of villa IDs to their facility names
+ */
+export async function getVillaFacilityMap(): Promise<Map<string, string[]>> {
+  try {
+    console.log('[CRM FACILITIES] Fetching villa facility assignments...');
+    const connection = await getConn();
+
+    // Query Property_Facilities__c with related Facility__c data
+    // Only include facilities where:
+    // - PF_Status__c = 'Available' (facility is available for this property)
+    // - F_Use_in_Web_Search__c = true (facility should appear in web search filters)
+    const result = await connection.query<SalesforcePropertyFacilityRecord>(
+      `SELECT Id, PF_Property__c, PF_Facility__c, PF_Facility__r.Name, PF_Facility__r.F_Type__c
+       FROM Property_Facilities__c
+       WHERE PF_Status__c = 'Available'
+       AND PF_Facility__r.F_Use_in_Web_Search__c = true`
+    ).execute({ autoFetch: true, maxFetch: 200000 });
+
+    console.log(`[CRM FACILITIES] Found ${result.records.length} available facility assignments`);
+
+    // Build map of villa ID -> facility names
+    const villaFacilityMap = new Map<string, string[]>();
+
+    result.records.forEach((record) => {
+      const villaId = record.PF_Property__c;
+      const facilityName = record.PF_Facility__r?.Name;
+
+      if (villaId && facilityName) {
+        const existing = villaFacilityMap.get(villaId) || [];
+        existing.push(facilityName);
+        villaFacilityMap.set(villaId, existing);
+      }
+    });
+
+    console.log(`[CRM FACILITIES] Mapped facilities for ${villaFacilityMap.size} villas`);
+    return villaFacilityMap;
+
+  } catch (error: any) {
+    console.error('[CRM FACILITIES] Error fetching villa facilities:', error);
+    if (error.errorCode === 'INVALID_TYPE') {
+      console.error('[CRM FACILITIES] 👉 HINT: Property_Facilities__c object does not exist');
+    } else if (error.errorCode === 'INVALID_FIELD') {
+      console.error('[CRM FACILITIES] 👉 HINT: Check field names - PF_Property__c, PF_Facility__c, PF_Facility__r');
+    }
+    return new Map();
+  }
+}
+
+/**
+ * Get facilities grouped by type
+ * Useful for rendering grouped filter options
+ *
+ * @returns Object with facility types as keys and arrays of facilities as values
+ */
+export async function getFacilitiesGroupedByType(): Promise<Record<string, Facility[]>> {
+  const facilities = await getAllFacilities();
+
+  const grouped: Record<string, Facility[]> = {};
+
+  facilities.forEach(facility => {
+    const type = facility.type || 'Other';
+    if (!grouped[type]) {
+      grouped[type] = [];
+    }
+    grouped[type].push(facility);
+  });
+
+  console.log(`[CRM FACILITIES] Grouped facilities into ${Object.keys(grouped).length} types`);
+  return grouped;
 }

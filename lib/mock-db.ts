@@ -46,6 +46,9 @@ export interface MockVilla {
   pricePerNight: number | null;
   bookedDates: string[]; // ISO format dates (YYYY-MM-DD)
 
+  // Facilities (from Property_Facilities__c junction)
+  facilities?: string[]; // Array of facility names
+
   // Status
   published: boolean;
 }
