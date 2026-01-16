@@ -305,7 +305,7 @@ export function RegionExplorer({ country, regions }: RegionExplorerProps) {
             </p>
             <div>
               <Link
-                href={`/villas-in-${toSlug(country)}/${toSlug(activeRegion)}`}
+                href={`/${toSlug(country)}/${toSlug(activeRegion)}`}
                 className="bg-[#3A443C] text-white px-6 py-3 font-serif uppercase tracking-widest text-xs hover:bg-black transition-colors inline-block"
               >
                 View Villas in {activeRegion}
@@ -318,7 +318,7 @@ export function RegionExplorer({ country, regions }: RegionExplorerProps) {
       {/* Footer bar */}
       <div className="bg-white py-4 text-center">
         <Link
-          href={`/villas-in-${toSlug(country)}`}
+          href={`/${toSlug(country)}`}
           className="text-xs uppercase tracking-widest text-gray-500 cursor-pointer hover:underline"
         >
           View All Villas in {country}

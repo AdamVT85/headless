@@ -256,7 +256,7 @@ export function DestinationTabsClient({ destinations, sectionTitle }: Destinatio
             </div>
             <div className="flex-shrink-0">
               <Link
-                href={`/villas-in-${activeContent.slug}`}
+                href={`/${activeContent.slug}`}
                 className="bg-[#3A443C] text-white px-6 py-3 font-serif uppercase tracking-widest text-xs hover:bg-black transition-colors inline-block"
               >
                 View Villas in {displayTitle}

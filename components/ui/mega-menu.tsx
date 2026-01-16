@@ -26,7 +26,7 @@ export function MegaMenu() {
             {MENU_DATA.popularDestinations.map((dest) => (
               <Link
                 key={dest.id}
-                href={`/villas-in-${dest.countryId}/${dest.id}`}
+                href={`/${dest.countryId}/${dest.id}`}
                 className="relative group cursor-pointer overflow-hidden h-24 w-52"
               >
                 <img
@@ -83,7 +83,7 @@ export function MegaMenu() {
               {activeCountry?.regions.map((region) => (
                 <Link
                   key={region.id}
-                  href={`/villas-in-${activeCountry.id}/${region.id}`}
+                  href={`/${activeCountry.id}/${region.id}`}
                   className="flex items-center justify-between group text-sm text-vintage-green hover:text-terracotta py-1 transition-colors"
                 >
                   <span>{region.name}</span>
@@ -95,7 +95,7 @@ export function MegaMenu() {
             {/* Action Button */}
             <div className="mt-6">
               <Link
-                href={`/villas-in-${activeCountry?.id}`}
+                href={`/${activeCountry?.id}`}
                 className="inline-block bg-vintage-green text-white px-6 py-2 text-xs tracking-widest uppercase hover:bg-opacity-90 transition-colors"
               >
                 View All Villas in {activeCountry?.name}

@@ -603,7 +603,7 @@ function IntroSection({ config }: { config: RegionConfig }) {
         <div className="text-xs uppercase tracking-widest text-gray-500 mb-8">
           <Link href="/" className="hover:text-gray-700">Home</Link>
           {' > '}
-          <Link href={`/villas-in-${config.countrySlug}`} className="hover:text-gray-700">
+          <Link href={`/${config.countrySlug}`} className="hover:text-gray-700">
             Villas in {config.country}
           </Link>
           {' > '}

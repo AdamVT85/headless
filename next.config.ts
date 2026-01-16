@@ -1,17 +1,28 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // PHASE 50 & 56: Rewrites for friendly landing page URLs
-  // Maps /villas-in-spain to /country/spain
-  // Maps /villas-in-spain/galicia to /country/spain/galicia
+  // Rewrites for friendly landing page URLs
+  // Maps /spain to /country/spain, /spain/galicia to /country/spain/galicia
   async rewrites() {
+    const countries = ['spain', 'france', 'italy', 'greece', 'portugal', 'croatia', 'turkey', 'balearics'];
+
     return [
-      // Region pages (must come before country pages for proper matching)
+      // Clean URLs: /spain/galicia -> /country/spain/galicia
+      ...countries.map(country => ({
+        source: `/${country}/:region`,
+        destination: `/country/${country}/:region`,
+      })),
+      // Clean URLs: /spain -> /country/spain
+      ...countries.map(country => ({
+        source: `/${country}`,
+        destination: `/country/${country}`,
+      })),
+      // Legacy support: /villas-in-spain/galicia -> /country/spain/galicia
       {
         source: '/villas-in-:country/:region',
         destination: '/country/:country/:region',
       },
-      // Country pages
+      // Legacy support: /villas-in-spain -> /country/spain
       {
         source: '/villas-in-:country',
         destination: '/country/:country',

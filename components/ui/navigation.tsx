@@ -161,42 +161,42 @@ export function Navigation() {
                 All Villas
               </Link>
               <Link
-                href="/villas-in-spain"
+                href="/spain"
                 onClick={() => setMobileMenuOpen(false)}
                 className="px-6 py-3 text-vintage-green hover:bg-cream transition-colors"
               >
                 Spain
               </Link>
               <Link
-                href="/villas-in-france"
+                href="/france"
                 onClick={() => setMobileMenuOpen(false)}
                 className="px-6 py-3 text-vintage-green hover:bg-cream transition-colors"
               >
                 France
               </Link>
               <Link
-                href="/villas-in-italy"
+                href="/italy"
                 onClick={() => setMobileMenuOpen(false)}
                 className="px-6 py-3 text-vintage-green hover:bg-cream transition-colors"
               >
                 Italy
               </Link>
               <Link
-                href="/villas-in-greece"
+                href="/greece"
                 onClick={() => setMobileMenuOpen(false)}
                 className="px-6 py-3 text-vintage-green hover:bg-cream transition-colors"
               >
                 Greece
               </Link>
               <Link
-                href="/villas-in-portugal"
+                href="/portugal"
                 onClick={() => setMobileMenuOpen(false)}
                 className="px-6 py-3 text-vintage-green hover:bg-cream transition-colors"
               >
                 Portugal
               </Link>
               <Link
-                href="/villas-in-croatia"
+                href="/croatia"
                 onClick={() => setMobileMenuOpen(false)}
                 className="px-6 py-3 text-vintage-green hover:bg-cream transition-colors"
               >
