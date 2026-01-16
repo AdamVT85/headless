@@ -10,12 +10,12 @@ import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 import { getAllVillas } from '@/lib/crm-client';
-import { MockVilla } from '@/lib/mock-db';
-import { MapPin, Search, ShieldCheck, Users, BedDouble, Bath, Star, Phone } from 'lucide-react';
+import { MapPin, Search, ShieldCheck, Star, Phone } from 'lucide-react';
 import { TownExplorer } from '@/components/llp/town-explorer';
 import { HeroSearch } from '@/components/hero-search';
 import { getClimateAverages } from '@/lib/weather';
 import { ClimateWidget } from '@/components/villa/climate-widget';
+import { RegionVillasSection } from '@/components/region-villas-section';
 
 // ===== REGION CONFIGURATION =====
 
@@ -488,9 +488,6 @@ export default async function RegionLandingPage({ params }: PageProps) {
     new Set(regionVillas.map((v) => v.town).filter((t): t is string => Boolean(t)))
   ).sort();
 
-  // Get first 4 villas for featured section
-  const featuredVillas = regionVillas.slice(0, 4);
-
   // Calculate average coordinates from villas for climate data
   const villasWithCoords = regionVillas.filter((v) => {
     const lat = typeof v.latitude === 'string' ? parseFloat(v.latitude) : v.latitude;
@@ -541,8 +538,8 @@ export default async function RegionLandingPage({ params }: PageProps) {
         </section>
       )}
 
-      {/* Featured Villas */}
-      <FeaturedVillasSection villas={featuredVillas} regionName={config.name} />
+      {/* All Villas with Map and Filters */}
+      <RegionVillasSection villas={regionVillas} regionName={config.name} />
 
       {/* Categories */}
       <CategoriesSection regionName={config.name} countryName={config.country} />
@@ -725,152 +722,6 @@ function ValuePropsSection() {
   );
 }
 
-// ===== FEATURED VILLAS SECTION =====
-
-function FeaturedVillasSection({ villas, regionName }: { villas: MockVilla[]; regionName: string }) {
-  if (villas.length === 0) {
-    return (
-      <section className="bg-[#F3F0E9] pt-16 pb-8 px-6 md:px-20">
-        <div className="max-w-5xl mx-auto text-center">
-          <h2 className="text-3xl font-serif text-[#3A443C] mb-6">Featured Villas in {regionName}</h2>
-          <p className="text-gray-600 mb-8">
-            We&apos;re currently updating our villa collection for {regionName}. Please check back soon.
-          </p>
-          <Link
-            href="/search"
-            className="bg-[#3A443C] text-white px-8 py-3 font-serif uppercase tracking-widest text-xs hover:bg-black transition-colors inline-block"
-          >
-            Browse All Villas
-          </Link>
-        </div>
-      </section>
-    );
-  }
-
-  return (
-    <section className="bg-[#F3F0E9] pt-16 pb-8 px-6 md:px-20">
-      <div className="max-w-5xl mx-auto">
-        <h2 className="text-3xl font-serif text-[#3A443C] mb-8 text-center">Featured Villas in {regionName}</h2>
-
-        {villas.map((villa) => (
-          <VillaCard key={villa.id} villa={villa} />
-        ))}
-
-        <div className="mt-8 text-center">
-          <Link
-            href={`/search?region=${encodeURIComponent(regionName)}`}
-            className="bg-[#3A443C] text-white px-8 py-3 font-serif uppercase tracking-widest text-xs hover:bg-black transition-colors inline-block"
-          >
-            View All Villas in {regionName}
-          </Link>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// ===== VILLA CARD COMPONENT =====
-
-function VillaCard({ villa }: { villa: MockVilla }) {
-  const tags = villa.amenities?.slice(0, 3) || [];
-
-  return (
-    <div className="bg-white shadow-sm flex flex-col md:flex-row mb-8 min-h-[280px]">
-      {/* Image Side */}
-      <div className="relative w-full md:w-5/12 h-56 md:h-auto overflow-hidden group">
-        <Image
-          src={villa.heroImageUrl || 'https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=800&h=500&fit=crop&q=80'}
-          alt={villa.title}
-          fill
-          className="object-cover transition-transform duration-700 group-hover:scale-105"
-        />
-      </div>
-
-      {/* Content Side */}
-      <div className="w-full md:w-7/12 p-6 flex flex-col relative">
-        {/* Tags */}
-        {tags.length > 0 && (
-          <div className="flex flex-wrap gap-2 mb-3">
-            {tags.map((tag) => (
-              <span
-                key={tag}
-                className="border border-gray-400 rounded-full px-3 py-1 text-[10px] uppercase tracking-wide text-gray-600"
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
-        )}
-
-        <div className="flex justify-between items-start">
-          <div>
-            <Link href={`/villas/${villa.slug}`}>
-              <h3 className="text-xl font-serif text-[#3A443C] mb-1 hover:underline">{villa.title}</h3>
-            </Link>
-            <p className="text-xs text-gray-500 mb-3">
-              {villa.town && `${villa.town}, `}{villa.region}, {villa.country}
-            </p>
-          </div>
-          {/* Price - Desktop */}
-          <div className="hidden md:block text-right">
-            <p className="text-[10px] uppercase tracking-widest text-gray-500">From</p>
-            <p className="text-2xl font-serif text-[#3A443C]">
-              {villa.pricePerWeek ? `£${villa.pricePerWeek.toLocaleString()}` : 'POA'}
-            </p>
-            <p className="text-[10px] uppercase tracking-widest text-gray-500">Per Week</p>
-          </div>
-        </div>
-
-        <p className="text-sm text-gray-600 leading-relaxed mb-4 line-clamp-2">
-          {villa.description?.replace(/<[^>]*>/g, '').substring(0, 150)}...
-        </p>
-
-        <div className="mt-auto">
-          <div className="flex gap-5 text-gray-700">
-            <div className="flex items-center gap-2">
-              <Users size={16} strokeWidth={1.5} />
-              <span className="text-xs">Sleeps {villa.maxGuests}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <BedDouble size={16} strokeWidth={1.5} />
-              <span className="text-xs">{villa.bedrooms} Beds</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Bath size={16} strokeWidth={1.5} />
-              <span className="text-xs">{villa.bathrooms} Baths</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Desktop Button */}
-        <div className="hidden md:block absolute bottom-6 right-6">
-          <Link
-            href={`/villas/${villa.slug}`}
-            className="bg-[#3A443C] text-white px-6 py-2 font-serif uppercase tracking-widest text-[10px] hover:bg-black transition-colors"
-          >
-            View Villa
-          </Link>
-        </div>
-
-        {/* Mobile Price & Action */}
-        <div className="md:hidden mt-4 pt-4 border-t border-gray-100 flex justify-between items-center">
-          <div>
-            <p className="text-lg font-serif text-[#3A443C]">
-              {villa.pricePerWeek ? `£${villa.pricePerWeek.toLocaleString()}` : 'POA'}
-            </p>
-            <p className="text-[10px] text-gray-500">Per Week</p>
-          </div>
-          <Link
-            href={`/villas/${villa.slug}`}
-            className="bg-[#3A443C] text-white px-5 py-2 font-serif uppercase tracking-widest text-[10px] hover:bg-black transition-colors"
-          >
-            View Villa
-          </Link>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 // ===== CATEGORIES SECTION =====
 

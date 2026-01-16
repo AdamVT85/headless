@@ -167,6 +167,8 @@ export function RegionExplorer({ country, regions }: RegionExplorerProps) {
   const [activeRegion, setActiveRegion] = useState(regions[0] || 'Unknown');
   const touchStartX = useRef<number | null>(null);
   const touchEndX = useRef<number | null>(null);
+  const touchStartY = useRef<number | null>(null);
+  const touchEndY = useRef<number | null>(null);
   const tabContainerRef = useRef<HTMLDivElement>(null);
   const tabRefs = useRef<Record<string, HTMLButtonElement | null>>({});
 
@@ -211,29 +213,41 @@ export function RegionExplorer({ country, regions }: RegionExplorerProps) {
   // Touch event handlers
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.targetTouches[0].clientX;
+    touchStartY.current = e.targetTouches[0].clientY;
     touchEndX.current = null;
+    touchEndY.current = null;
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
     touchEndX.current = e.targetTouches[0].clientX;
+    touchEndY.current = e.targetTouches[0].clientY;
   };
 
   const handleTouchEnd = () => {
-    if (!touchStartX.current || !touchEndX.current) return;
+    if (!touchStartX.current || !touchEndX.current || !touchStartY.current || !touchEndY.current) return;
 
-    const distance = touchStartX.current - touchEndX.current;
-    const isLeftSwipe = distance > minSwipeDistance;
-    const isRightSwipe = distance < -minSwipeDistance;
+    const distanceX = touchStartX.current - touchEndX.current;
+    const distanceY = touchStartY.current - touchEndY.current;
+    const absDistanceX = Math.abs(distanceX);
+    const absDistanceY = Math.abs(distanceY);
 
-    if (isLeftSwipe) {
-      navigateRegion('next');
-    } else if (isRightSwipe) {
-      navigateRegion('prev');
+    // Only trigger swipe if horizontal movement is greater than vertical
+    // This prevents accidental swipes when scrolling
+    const isHorizontalSwipe = absDistanceX > absDistanceY && absDistanceX > minSwipeDistance;
+
+    if (isHorizontalSwipe) {
+      if (distanceX > 0) {
+        navigateRegion('next');
+      } else {
+        navigateRegion('prev');
+      }
     }
 
     // Reset values
     touchStartX.current = null;
     touchEndX.current = null;
+    touchStartY.current = null;
+    touchEndY.current = null;
   };
 
   // Helper to get content safely with fallback
