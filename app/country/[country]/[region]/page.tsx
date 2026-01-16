@@ -39,7 +39,7 @@ const SUB_REGION_MAPPING: Record<string, string[]> = {
   // Spain - Catalunya (includes Costa Brava)
   'catalunya': ['costa brava', 'tamariu', 'palafrugell', 'calella de palafrugell', 'begur', 'llafranc', 'palafrugell area', 'aiguablava', 'fornells', 'emporda'],
   // Spain - Galicia
-  'galicia': ['cangas', 'cesantes', 'nigran', 'gondomar', 'vigo', 'rias baixas', 'pontevedra', 'sanxenxo'],
+  'galicia': ['cangas', 'cesantes', 'nigran', 'gondomar', 'vigo', 'rias baixas', 'pontevedra', 'sanxenxo', 'sanxenxo and surrounding villages', 'mondariz balneario', 'negreira', 'hio', 'o porriño', 'o porrino'],
   // Spain - Andalucia
   'andalucia': ['el bosque', 'conil de la frontera', 'orgiva', 'ronda', 'grazalema', 'alpujarras', 'costa de la luz', 'vejer', 'tarifa', 'cadiz', 'jerez', 'seville', 'granada', 'malaga', 'marbella', 'nerja', 'frigiliana'],
   // Spain - Costa Blanca
@@ -97,10 +97,13 @@ const matchesRegion = (villaRegion: string, configName: string, configSlug: stri
   const normalizedVillaRegion = normalize(villaRegion);
   const normalizedConfigName = normalize(configName);
 
-  // Direct match
+  // Direct match (exact)
   if (normalizedVillaRegion === normalizedConfigName) return true;
 
-  // Check sub-region mapping
+  // Partial match (villa's region contains the config name)
+  if (normalizedVillaRegion.includes(normalizedConfigName)) return true;
+
+  // Check sub-region mapping (exact match against sub-regions)
   const subRegions = SUB_REGION_MAPPING[configSlug] || [];
   return subRegions.some(sub => normalize(sub) === normalizedVillaRegion);
 };
