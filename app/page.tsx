@@ -536,6 +536,16 @@ function FeaturedVillasSection({ data }: { data: HomePageData }) {
   );
 }
 
+// Category title to filter URL mapping - ensures correct filters regardless of CMS data
+const categoryFilterUrls: Record<string, string> = {
+  "villas with children's pools": "/search?facilities=Children's Pool,Fenced/Gated Pool",
+  "villas for couples": "/search?maxSleeps=4",
+  "large villas": "/search?minSleeps=8",
+  "car not essential": "/search?facilities=Car NOT Essential",
+  "villas near beaches": "/search?facilities=Beach - Walk (within 1.5km)",
+  "secluded villas": "/search?facilities=Grounds offer TOTAL PRIVACY",
+};
+
 /**
  * Villas For X Grid - Category showcase
  */
@@ -543,6 +553,12 @@ function VillasForXGrid({ data }: { data: HomePageData }) {
   const categories = data.villaCategories && data.villaCategories.length > 0
     ? data.villaCategories
     : defaultCategories;
+
+  // Get the correct filter URL for a category based on its title
+  const getCategoryUrl = (title: string, fallbackUrl?: string): string => {
+    const normalizedTitle = title.toLowerCase().trim();
+    return categoryFilterUrls[normalizedTitle] || fallbackUrl || '/search';
+  };
 
   return (
     <section className="py-12 bg-cream">
@@ -564,7 +580,7 @@ function VillasForXGrid({ data }: { data: HomePageData }) {
             return (
               <Link
                 key={card._key}
-                href={card.linkUrl || '/search'}
+                href={getCategoryUrl(card.title, card.linkUrl)}
                 className="relative group cursor-pointer overflow-hidden rounded-sm h-[380px] block"
               >
                 <div className="relative w-full h-full">
