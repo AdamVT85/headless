@@ -20,3 +20,17 @@ import { twMerge } from "tailwind-merge";
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
+
+/**
+ * Format a price value safely for display
+ *
+ * @param price - Price value (can be null)
+ * @returns Formatted price string or "Call to Book" for null/zero prices
+ */
+export function formatWeeklyPrice(price: number | null | undefined): string {
+  if (price == null || price === 0) {
+    return 'Call to Book';
+  }
+
+  return `£${price.toLocaleString('en-GB')}`;
+}

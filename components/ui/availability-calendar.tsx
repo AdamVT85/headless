@@ -14,9 +14,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, formatWeeklyPrice } from '@/lib/utils';
 import { WeeklyRate } from '@/types/villa';
-import { formatWeeklyPrice } from '@/lib/crm-client';
 
 interface AvailabilityCalendarProps {
   availability?: WeeklyRate[]; // Real-time availability from Salesforce
