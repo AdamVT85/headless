@@ -138,10 +138,10 @@ const fallbackImages = {
 };
 
 const defaultCollections: Collection[] = [
-  { _key: '1', title: 'Villas with a view', linkUrl: '/search' },
-  { _key: '2', title: 'Villas by the sea', linkUrl: '/search' },
-  { _key: '3', title: 'Villas in Tuscany', linkUrl: '/search' },
-  { _key: '4', title: 'Family-friendly villas', linkUrl: '/search' },
+  { _key: '1', title: 'Villas with a view', linkUrl: '/search?facilities=Great Views' },
+  { _key: '2', title: 'Villas by the sea', linkUrl: '/search?facilities=Beach - Walk (within 1.5km)' },
+  { _key: '3', title: 'Villas in Tuscany', linkUrl: '/search?location=Tuscany' },
+  { _key: '4', title: "Villas with children's pools", linkUrl: "/search?facilities=Children's Pool,Fenced/Gated Pool" },
 ];
 
 const defaultCategories: VillaCategory[] = [
