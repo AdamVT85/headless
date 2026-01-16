@@ -5,7 +5,7 @@
  * Server-side functions for fetching favourite villa data
  */
 
-import { getVillaById } from '@/lib/crm-client';
+import { getAllVillas } from '@/lib/crm-client';
 
 interface VillaData {
   id: string;
@@ -22,30 +22,40 @@ interface VillaData {
 /**
  * Fetch multiple villas by their IDs
  * Returns villa data for display on the favorites page
+ * Uses cached getAllVillas() for better performance and reliability
  */
 export async function getVillasByIds(ids: string[]): Promise<VillaData[]> {
   if (!ids || ids.length === 0) {
     return [];
   }
 
-  // Fetch all villas in parallel
-  const villaPromises = ids.map(id => getVillaById(id));
-  const results = await Promise.all(villaPromises);
+  try {
+    // Get all villas from cache
+    const allVillas = await getAllVillas();
 
-  // Filter out nulls (villas that weren't found) and map to the display format
-  const villas: VillaData[] = results
-    .filter((villa): villa is NonNullable<typeof villa> => villa !== null)
-    .map(villa => ({
-      id: villa.id,
-      slug: villa.slug,
-      title: villa.title,
-      region: villa.region,
-      town: villa.town,
-      heroImageUrl: villa.heroImageUrl,
-      pricePerWeek: villa.pricePerWeek,
-      maxGuests: villa.maxGuests,
-      bedrooms: villa.bedrooms,
-    }));
+    // Create a Set for O(1) lookup
+    const idSet = new Set(ids);
 
-  return villas;
+    // Filter to only the favourited villas and preserve order
+    const villas: VillaData[] = ids
+      .map(id => allVillas.find(v => v.id === id))
+      .filter((villa): villa is NonNullable<typeof villa> => villa !== null && villa !== undefined)
+      .map(villa => ({
+        id: villa.id,
+        slug: villa.slug,
+        title: villa.title,
+        region: villa.region,
+        town: villa.town,
+        heroImageUrl: villa.heroImageUrl,
+        pricePerWeek: villa.pricePerWeek,
+        maxGuests: villa.maxGuests,
+        bedrooms: villa.bedrooms,
+      }));
+
+    console.log(`[Favorites] Found ${villas.length}/${ids.length} favourited villas`);
+    return villas;
+  } catch (error) {
+    console.error('[Favorites] Failed to fetch villas:', error);
+    return [];
+  }
 }
