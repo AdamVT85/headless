@@ -58,7 +58,7 @@ export const MENU_DATA: NavigationData = {
       name: 'France',
       regions: [
         { id: 'south-west-france', name: 'South West France' },
-        { id: 'cote-d-azur', name: 'Côte d\'Azur' },
+        { id: 'cote-dazur', name: 'Côte d\'Azur' },
         { id: 'languedoc', name: 'Languedoc' },
         { id: 'provence', name: 'Provence' },
       ]
