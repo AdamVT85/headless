@@ -1,10 +1,25 @@
 /**
  * VILLAS FOR MENU - Collections Dropdown
  * Compact full-width dropdown with collections and traveller types
+ * Links match the homepage "What are you looking for" section
  */
 
 import Link from 'next/link';
 import { MENU_DATA } from '@/lib/navigation-data';
+
+// Map collection IDs to their destination page URLs
+const collectionUrls: Record<string, string> = {
+  'mallorca': '/balearics/mallorca',
+  'corfu': '/greece/corfu',
+  'algarve': '/portugal/algarve',
+};
+
+// Map traveller type IDs to search URLs (matching homepage)
+const travellerTypeUrls: Record<string, string> = {
+  'family': "/search?facilities=Children's Pool,Fenced/Gated Pool",
+  'couples': '/search?maxSleeps=4',
+  'large': '/search?minSleeps=8',
+};
 
 interface CardProps {
   title: string;
@@ -46,7 +61,7 @@ export function VillasForMenu() {
                 key={item.id}
                 title={item.title}
                 imageUrl={item.imageUrl}
-                href={`/collections/${item.id}`}
+                href={collectionUrls[item.id] || `/search?region=${item.title}`}
               />
             ))}
           </div>
@@ -61,7 +76,7 @@ export function VillasForMenu() {
                 key={item.id}
                 title={item.title}
                 imageUrl={item.imageUrl}
-                href={`/villas-for/${item.id}`}
+                href={travellerTypeUrls[item.id] || '/search'}
               />
             ))}
           </div>
@@ -70,7 +85,7 @@ export function VillasForMenu() {
         {/* Footer Button */}
         <div className="flex justify-center pt-2">
           <Link
-            href="/villas"
+            href="/search"
             className="bg-vintage-green text-white px-6 py-2 text-xs tracking-wider uppercase hover:bg-opacity-90 transition-colors"
           >
             View All Villas
