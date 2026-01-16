@@ -175,27 +175,27 @@ export function FacilityFilter({ villas }: FacilityFilterProps) {
             )}
           >
             {/* Header */}
-            <div className="sticky top-0 bg-white border-b border-stone-200 px-6 py-4 flex items-center justify-between z-10">
+            <div className="sticky top-0 bg-white border-b border-stone-200 px-4 py-3 md:px-6 md:py-4 flex items-center justify-between z-10">
               <div>
-                <h2 className="font-serif text-xl text-olive">Filters</h2>
+                <h2 className="font-serif text-lg md:text-xl text-olive">Filters</h2>
                 {hasSelectedFacilities && (
-                  <p className="text-sm text-stone-500 mt-0.5">
+                  <p className="text-xs md:text-sm text-stone-500 mt-0.5">
                     {selectedCount} {selectedCount === 1 ? 'filter' : 'filters'} selected
                   </p>
                 )}
               </div>
               <button
                 onClick={() => setIsOpen(false)}
-                className="p-2 hover:bg-stone-100 rounded-full transition-colors"
+                className="p-1.5 md:p-2 hover:bg-stone-100 rounded-full transition-colors"
                 aria-label="Close filters"
               >
-                <X size={24} className="text-stone-600" />
+                <X size={22} className="text-stone-600 md:w-6 md:h-6" />
               </button>
             </div>
 
             {/* Filter Options */}
-            <div className="px-6 py-6 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 160px)' }}>
-              <div className="space-y-3">
+            <div className="px-4 py-4 md:px-6 md:py-6 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 130px)' }}>
+              <div className="space-y-2 md:space-y-3">
                 {FILTER_FACILITIES.map((facility) => {
                   const isSelected = selectedFacilities.includes(facility.sfName);
                   const count = availableFacilities.get(facility.sfName) || 0;
@@ -208,7 +208,7 @@ export function FacilityFilter({ villas }: FacilityFilterProps) {
                       onClick={() => canSelect && toggleFacility(facility.sfName)}
                       disabled={isDisabled}
                       className={cn(
-                        'w-full flex items-center justify-between px-4 py-4 rounded-lg border-2 transition-all duration-200',
+                        'w-full flex items-center justify-between px-3 py-2.5 md:px-4 md:py-4 rounded-lg border-2 transition-all duration-200',
                         isSelected
                           ? 'border-olive bg-olive/5'
                           : canSelect
@@ -216,23 +216,23 @@ export function FacilityFilter({ villas }: FacilityFilterProps) {
                             : 'border-stone-100 bg-stone-50 cursor-not-allowed opacity-50'
                       )}
                     >
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2.5 md:gap-3">
                         {/* Checkbox */}
                         <div
                           className={cn(
-                            'w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all',
+                            'w-5 h-5 md:w-6 md:h-6 rounded-md border-2 flex items-center justify-center transition-all flex-shrink-0',
                             isSelected
                               ? 'bg-olive border-olive'
                               : 'border-stone-300 bg-white'
                           )}
                         >
-                          {isSelected && <Check size={16} className="text-white" strokeWidth={3} />}
+                          {isSelected && <Check size={14} className="text-white md:w-4 md:h-4" strokeWidth={3} />}
                         </div>
 
                         {/* Label */}
                         <span
                           className={cn(
-                            'font-medium',
+                            'font-medium text-sm md:text-base',
                             isSelected ? 'text-olive' : 'text-stone-700'
                           )}
                         >
@@ -243,7 +243,7 @@ export function FacilityFilter({ villas }: FacilityFilterProps) {
                       {/* Count Badge */}
                       <span
                         className={cn(
-                          'text-sm px-2.5 py-1 rounded-full',
+                          'text-xs md:text-sm px-2 py-0.5 md:px-2.5 md:py-1 rounded-full flex-shrink-0',
                           isSelected
                             ? 'bg-olive text-white'
                             : count > 0
@@ -268,11 +268,11 @@ export function FacilityFilter({ villas }: FacilityFilterProps) {
             </div>
 
             {/* Footer Actions */}
-            <div className="sticky bottom-0 bg-white border-t border-stone-200 px-6 py-4 flex gap-3">
+            <div className="sticky bottom-0 bg-white border-t border-stone-200 px-4 py-3 md:px-6 md:py-4 flex gap-2 md:gap-3">
               {hasSelectedFacilities && (
                 <button
                   onClick={clearFacilities}
-                  className="flex-1 px-4 py-3 border border-stone-300 text-stone-700 font-medium rounded-sm hover:bg-stone-50 transition-colors"
+                  className="flex-1 px-3 py-2.5 md:px-4 md:py-3 border border-stone-300 text-stone-700 font-medium text-sm md:text-base rounded-sm hover:bg-stone-50 transition-colors"
                 >
                   Clear All
                 </button>
@@ -280,7 +280,7 @@ export function FacilityFilter({ villas }: FacilityFilterProps) {
               <button
                 onClick={applyAndClose}
                 className={cn(
-                  'flex-1 px-4 py-3 bg-olive text-white font-medium rounded-sm hover:bg-olive/90 transition-colors',
+                  'flex-1 px-3 py-2.5 md:px-4 md:py-3 bg-olive text-white font-medium text-sm md:text-base rounded-sm hover:bg-olive/90 transition-colors',
                   !hasSelectedFacilities && 'flex-[2]'
                 )}
               >
