@@ -216,7 +216,7 @@ export const COUNTRY_REGIONS: Record<string, CountryConfig> = {
     slug: 'france',
     regions: [
       {
-        id: 'cote-azur',
+        id: 'cote-dazur',
         label: 'Côte d\'Azur',
         title: 'Villas in Côte d\'Azur',
         description1: 'The French Riviera, glamorous playground of the rich and famous, offers stunning coastline, Belle Époque architecture, and world-class dining.',
