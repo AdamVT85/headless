@@ -49,13 +49,49 @@ export interface VillaAvailabilityFromSFCC {
 /**
  * Weekly Rate record from Salesforce
  * Represents a single week's availability and pricing
+ * WR_Group_of__c determines the max group size this rate applies to
  */
 export interface WeeklyRate {
   id: string; // Weekly_Rate__c.Id
   weekStartDate: Date; // WR_Week_Start_Date__c (Saturday changeover)
   price: number | null; // WR_Live_Sell_This_Year__c
   status: string; // WR_Status__c (e.g., 'Available', 'Booked')
+  groupOf: number | null; // WR_Group_of__c - max guests this rate applies to
   rawDateString: string; // Original date string from Salesforce for debugging
+}
+
+// ===== CMA COMPLIANCE: GUEST & PRICING TYPES =====
+
+/**
+ * Guest information for CMA-compliant pricing
+ * Used to calculate tourist tax (age-dependent) and damage waiver
+ */
+export interface GuestInfo {
+  adults: number; // Guests aged 18+
+  children: number; // Guests under 18
+  childAges: number[]; // Age of each child (for tourist tax calculation)
+}
+
+/**
+ * CMA-compliant price breakdown
+ * Shows true total cost upfront including all mandatory fees
+ */
+export interface PriceBreakdown {
+  weeklyRate: number; // Villa rental for group size
+  touristTax: number; // Per qualifying person per week
+  damageWaiver: number; // Per person per week
+  totalPerWeek: number; // All-inclusive weekly total
+  totalPrice: number; // Grand total for entire stay
+  weeks: number;
+  touristTaxDetails: {
+    qualifyingGuests: number;
+    ratePerPerson: number;
+    ageThreshold: number;
+  };
+  damageWaiverDetails: {
+    totalGuests: number;
+    ratePerPerson: number;
+  };
 }
 
 // ===== HYBRID VILLA TYPE =====

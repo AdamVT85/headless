@@ -80,6 +80,7 @@ export interface SalesforceWeeklyRateRecord {
   WR_Week_Start_Date__c: string;
   WR_Live_Sell_This_Year__c: number | null;
   WR_Status__c: string;
+  WR_Group_of__c: number | null; // Max group size this rate applies to
 }
 
 /**
@@ -587,12 +588,13 @@ export async function getVillaAvailability(villaId: string): Promise<WeeklyRate[
         WR_Week_Start_Date__c,
         WR_Week_End_Date__c,
         WR_Live_Sell_This_Year__c,
-        WR_Status__c
+        WR_Status__c,
+        WR_Group_of__c
       FROM Weekly_Rate__c
       WHERE WR_Contract__r.CON_Property__c = '${villaId}'
         AND WR_Week_Start_Date__c >= ${todayStr}
-      ORDER BY WR_Week_Start_Date__c ASC
-      LIMIT 52`
+      ORDER BY WR_Week_Start_Date__c, WR_Group_of__c ASC
+      LIMIT 200`
     );
 
     console.log(`[CRM AVAILABILITY] ✓ Found ${result.records.length} weekly rates`);
@@ -618,6 +620,7 @@ export async function getVillaAvailability(villaId: string): Promise<WeeklyRate[
         weekStartDate,
         price: record.WR_Live_Sell_This_Year__c,
         status: record.WR_Status__c || 'Unknown',
+        groupOf: record.WR_Group_of__c ?? null,
         rawDateString: record.WR_Week_Start_Date__c,
       };
     });

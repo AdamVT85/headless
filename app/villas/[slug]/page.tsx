@@ -284,6 +284,8 @@ export default async function VillaPage({ params, searchParams }: VillaPageProps
                     availability={availability}
                     villaId={villa.id}
                     initialStartDate={search.startDate}
+                    country={villa.country || ''}
+                    maxGuests={villa.maxGuests || 10}
                   />
                 </div>
 
