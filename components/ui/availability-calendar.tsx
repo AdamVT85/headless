@@ -32,6 +32,7 @@ const DAMAGE_WAIVER_PER_PERSON_PER_WEEK = 2.5;
 const DEFAULT_TAX_AGE_THRESHOLD = 16;
 const GREECE_TAX_AGE_THRESHOLD = 13;
 const LOWER_AGE_THRESHOLD_COUNTRIES = ['greece'];
+const MIN_NIGHTS_DAILY_MODE = 4; // Minimum selectable nights in daily-rate mode
 
 // ===== DAILY AVAILABILITY TYPES =====
 
@@ -214,6 +215,7 @@ export function AvailabilityCalendar({
   const [rangeStart, setRangeStart] = useState<string | null>(null);
   const [rangeEnd, setRangeEnd] = useState<string | null>(null);
   const [showPriceBreakdown, setShowPriceBreakdown] = useState(false);
+  const [minNightsWarning, setMinNightsWarning] = useState(false);
 
   // Guest state
   const [guests, setGuests] = useState<GuestInfo>({ adults: 2, children: 0, childAges: [] });
@@ -489,13 +491,21 @@ export function AvailabilityCalendar({
     if (!rangeStart) {
       setRangeStart(dateStr);
       setRangeEnd(null);
+      setMinNightsWarning(false);
       return;
     }
 
     // Check-in set, no checkout yet
     if (rangeStart && !rangeEnd) {
-      if (dateStr === rangeStart) { setRangeStart(null); setRangeEnd(null); return; }
+      if (dateStr === rangeStart) { setRangeStart(null); setRangeEnd(null); setMinNightsWarning(false); return; }
       if (dateStr > rangeStart) {
+        const nights = countNights(rangeStart, dateStr);
+        // Enforce minimum nights
+        if (nights < MIN_NIGHTS_DAILY_MODE) {
+          setMinNightsWarning(true);
+          return;
+        }
+        setMinNightsWarning(false);
         // Validate all days from check-in to day before checkout are available
         if (isDailyRangeValid(rangeStart, addDaysToDateString(dateStr, -1))) {
           setRangeEnd(dateStr); // dateStr = checkout date
@@ -503,7 +513,7 @@ export function AvailabilityCalendar({
           setRangeStart(dateStr); setRangeEnd(null);
         }
       } else {
-        setRangeStart(dateStr); setRangeEnd(null);
+        setRangeStart(dateStr); setRangeEnd(null); setMinNightsWarning(false);
       }
       return;
     }
@@ -511,6 +521,7 @@ export function AvailabilityCalendar({
     // Both set → start new selection
     setRangeStart(dateStr);
     setRangeEnd(null);
+    setMinNightsWarning(false);
   };
 
   const handleDateClick = isDailyRateMode ? handleDailyDateClick : handleWeeklyDateClick;
@@ -540,8 +551,11 @@ export function AvailabilityCalendar({
   const isDateInRange = useCallback((dateStr: string): boolean => {
     if (!rangeStart) return false;
     if (isDailyRateMode) {
-      const endStr = rangeEnd || addDaysToDateString(rangeStart, 1);
-      // Highlight check-in through checkout (inclusive for visual)
+      // In daily mode, rangeEnd is the checkout date — don't highlight it
+      // Highlight check-in through last night (day before checkout)
+      const endStr = rangeEnd
+        ? addDaysToDateString(rangeEnd, -1) // Last stay night = checkout - 1
+        : rangeStart; // Single click = just the check-in day
       return dateStr >= rangeStart && dateStr <= endStr;
     } else {
       const endStr = rangeEnd || rangeStart;
@@ -668,7 +682,7 @@ export function AvailabilityCalendar({
       {isDailyRateMode && (
         <div className="px-3 py-1.5 bg-soleil-50 border-b border-soleil-200">
           <p className="text-[10px] text-soleil-700 font-medium">
-            Flexible dates — choose any check-in and check-out date
+            Flexible dates — choose any check-in and check-out ({MIN_NIGHTS_DAILY_MODE} night minimum)
           </p>
         </div>
       )}
@@ -826,6 +840,13 @@ export function AvailabilityCalendar({
             </div>
           )}
         </div>
+
+        {/* Minimum nights warning */}
+        {minNightsWarning && isDailyRateMode && (
+          <p className="text-[10px] text-terracotta font-medium mt-1.5 px-0.5">
+            Minimum stay is {MIN_NIGHTS_DAILY_MODE} nights. Please select a later check-out date.
+          </p>
+        )}
       </div>
 
       {/* Week Selector Buttons */}
