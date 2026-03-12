@@ -57,6 +57,7 @@ export interface WeeklyRate {
   price: number | null; // WR_Live_Sell_This_Year__c
   status: string; // WR_Status__c (e.g., 'Available', 'Booked')
   groupOf: number | null; // WR_Group_of__c - max guests this rate applies to
+  displayDailyRate: boolean; // WR_Display_Daily_rate__c - enables flexible day-by-day booking
   rawDateString: string; // Original date string from Salesforce for debugging
 }
 
