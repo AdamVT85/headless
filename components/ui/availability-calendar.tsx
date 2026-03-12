@@ -214,6 +214,7 @@ export function AvailabilityCalendar({
   const [currentMonth, setCurrentMonth] = useState(() => getInitialMonth(availability));
   const [rangeStart, setRangeStart] = useState<string | null>(null);
   const [rangeEnd, setRangeEnd] = useState<string | null>(null);
+  const [selectedWeeks, setSelectedWeeks] = useState<Set<string>>(new Set());
   const [showPriceBreakdown, setShowPriceBreakdown] = useState(false);
   const [minNightsWarning, setMinNightsWarning] = useState(false);
 
@@ -358,6 +359,31 @@ export function AvailabilityCalendar({
 
   // ===== SUMMARY =====
   const summary = useMemo(() => {
+    // Weekly mode with multi-select
+    if (!isDailyRateMode && selectedWeeks.size > 0) {
+      const sortedWeeks = Array.from(selectedWeeks).sort();
+      let rentalTotal = 0;
+      const weekRates: WeeklyRate[] = [];
+
+      sortedWeeks.forEach(weekStr => {
+        const data = getWeekData(weekStr);
+        if (data) { rentalTotal += data.price || 0; weekRates.push(data); }
+      });
+
+      const count = sortedWeeks.length;
+      const startDate = new Date(sortedWeeks[0] + 'T00:00:00');
+      const lastWeekStart = new Date(sortedWeeks[sortedWeeks.length - 1] + 'T00:00:00');
+      const endDate = new Date(lastWeekStart);
+      endDate.setDate(endDate.getDate() + 7);
+
+      const avgWeeklyRate = count > 0 ? rentalTotal / count : 0;
+      const breakdown = calculatePriceBreakdown(avgWeeklyRate, count, guests, country);
+      breakdown.weeklyRate = rentalTotal;
+      breakdown.totalPrice = rentalTotal + breakdown.touristTax + breakdown.damageWaiver;
+
+      return { startDate, endDate, nights: count * 7, isDaily: false, breakdown, weekRates };
+    }
+
     if (!rangeStart) return null;
 
     if (isDailyRateMode) {
@@ -385,7 +411,7 @@ export function AvailabilityCalendar({
 
       return { startDate, endDate, nights, isDaily: true, breakdown, weekRates: [] as WeeklyRate[] };
     } else {
-      // Weekly mode: count weeks, sum weekly rates
+      // Weekly mode: single range from calendar click
       const endStr = rangeEnd || rangeStart;
       let rentalTotal = 0;
       let count = 0;
@@ -410,7 +436,7 @@ export function AvailabilityCalendar({
 
       return { startDate, endDate, nights: count * 7, isDaily: false, breakdown, weekRates };
     }
-  }, [rangeStart, rangeEnd, getWeekData, dailyAvailabilityMap, guests, country, isDailyRateMode]);
+  }, [rangeStart, rangeEnd, selectedWeeks, getWeekData, dailyAvailabilityMap, guests, country, isDailyRateMode]);
 
   // ===== EFFECTS =====
 
@@ -461,6 +487,9 @@ export function AvailabilityCalendar({
     const dateStr = formatDateISO(date);
     const clickedWeek = getWeekData(dateStr);
     if (!clickedWeek || clickedWeek.status !== 'Available') return;
+
+    // Clear multi-select when using calendar grid directly
+    if (selectedWeeks.size > 0) setSelectedWeeks(new Set());
 
     if (!rangeStart) { setRangeStart(dateStr); setRangeEnd(null); return; }
 
@@ -541,8 +570,18 @@ export function AvailabilityCalendar({
       setRangeStart(dateStr);
       setRangeEnd(endDateStr);
     } else {
-      if (rangeStart === dateStr && !rangeEnd) { setRangeStart(null); setRangeEnd(null); return; }
-      setRangeStart(dateStr);
+      // Weekly mode: toggle week in/out of selectedWeeks set
+      setSelectedWeeks(prev => {
+        const next = new Set(prev);
+        if (next.has(dateStr)) {
+          next.delete(dateStr);
+        } else {
+          next.add(dateStr);
+        }
+        return next;
+      });
+      // Clear any range-based selection from calendar clicks
+      setRangeStart(null);
       setRangeEnd(null);
     }
     if (onWeekSelect) onWeekSelect(rate);
@@ -551,6 +590,15 @@ export function AvailabilityCalendar({
   // ===== RANGE CHECK =====
 
   const isDateInRange = useCallback((dateStr: string): boolean => {
+    // Weekly mode with multi-select: check if date falls within any selected week
+    if (!isDailyRateMode && selectedWeeks.size > 0) {
+      for (const weekStart of selectedWeeks) {
+        const weekEnd = addDaysToDateString(weekStart, 6); // Sat to Fri
+        if (dateStr >= weekStart && dateStr <= weekEnd) return true;
+      }
+      return false;
+    }
+
     if (!rangeStart) return false;
     if (isDailyRateMode) {
       // In daily mode, rangeEnd is the checkout date — don't highlight it
@@ -563,7 +611,7 @@ export function AvailabilityCalendar({
       const endStr = rangeEnd || rangeStart;
       return dateStr >= rangeStart && dateStr <= endStr;
     }
-  }, [rangeStart, rangeEnd, isDailyRateMode]);
+  }, [rangeStart, rangeEnd, isDailyRateMode, selectedWeeks]);
 
   const previousMonth = () => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1));
   const nextMonth = () => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1));
@@ -1044,7 +1092,7 @@ export function AvailabilityCalendar({
 
           {/* Book Now CTA */}
           <Link
-            href={`/book/${villaId}?startDate=${rangeStart}${rangeEnd ? `&endDate=${rangeEnd}` : ''}&adults=${guests.adults}&children=${guests.children}${guests.childAges.length > 0 ? `&childAges=${guests.childAges.join(',')}` : ''}${isDailyRateMode ? '&mode=daily' : ''}`}
+            href={`/book/${villaId}?${selectedWeeks.size > 0 ? `weeks=${Array.from(selectedWeeks).sort().join(',')}` : `startDate=${rangeStart}${rangeEnd ? `&endDate=${rangeEnd}` : ''}`}&adults=${guests.adults}&children=${guests.children}${guests.childAges.length > 0 ? `&childAges=${guests.childAges.join(',')}` : ''}${isDailyRateMode ? '&mode=daily' : ''}`}
             className="block w-full bg-terracotta hover:bg-terracotta/90 text-white text-center py-2.5 rounded-sm transition-colors font-semibold text-sm mt-1"
           >
             {summary.breakdown.totalPrice > 0 ? 'Book Now' : 'Enquire Now'}
