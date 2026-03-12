@@ -359,8 +359,8 @@ export function AvailabilityCalendar({
 
   // ===== SUMMARY =====
   const summary = useMemo(() => {
-    // Weekly mode with multi-select
-    if (!isDailyRateMode && selectedWeeks.size > 0) {
+    // Multi-select weeks (from week buttons, either mode)
+    if (selectedWeeks.size > 0) {
       const sortedWeeks = Array.from(selectedWeeks).sort();
       let rentalTotal = 0;
       const weekRates: WeeklyRate[] = [];
@@ -371,17 +371,22 @@ export function AvailabilityCalendar({
       });
 
       const count = sortedWeeks.length;
+      const nights = count * 7;
       const startDate = new Date(sortedWeeks[0] + 'T00:00:00');
       const lastWeekStart = new Date(sortedWeeks[sortedWeeks.length - 1] + 'T00:00:00');
       const endDate = new Date(lastWeekStart);
       endDate.setDate(endDate.getDate() + 7);
 
-      const avgWeeklyRate = count > 0 ? rentalTotal / count : 0;
-      const breakdown = calculatePriceBreakdown(avgWeeklyRate, count, guests, country);
-      breakdown.weeklyRate = rentalTotal;
-      breakdown.totalPrice = rentalTotal + breakdown.touristTax + breakdown.damageWaiver;
-
-      return { startDate, endDate, nights: count * 7, isDaily: false, breakdown, weekRates };
+      if (isDailyRateMode) {
+        const breakdown = calculateDailyPriceBreakdown(rentalTotal, nights, guests, country);
+        return { startDate, endDate, nights, isDaily: true, breakdown, weekRates };
+      } else {
+        const avgWeeklyRate = count > 0 ? rentalTotal / count : 0;
+        const breakdown = calculatePriceBreakdown(avgWeeklyRate, count, guests, country);
+        breakdown.weeklyRate = rentalTotal;
+        breakdown.totalPrice = rentalTotal + breakdown.touristTax + breakdown.damageWaiver;
+        return { startDate, endDate, nights, isDaily: false, breakdown, weekRates };
+      }
     }
 
     if (!rangeStart) return null;
@@ -516,6 +521,9 @@ export function AvailabilityCalendar({
     const dayData = dailyAvailabilityMap.get(dateStr);
     if (!dayData || dayData.status !== 'Available') return;
 
+    // Clear multi-select when using calendar grid directly
+    if (selectedWeeks.size > 0) setSelectedWeeks(new Set());
+
     // No selection yet → set check-in
     if (!rangeStart) {
       setRangeStart(dateStr);
@@ -561,37 +569,29 @@ export function AvailabilityCalendar({
     const dateStr = formatDateISO(rate.weekStartDate);
     if (rate.status !== 'Available') return;
 
-    if (isDailyRateMode) {
-      // In daily mode, week button selects Sat-to-Sat (7 nights)
-      const endDateStr = addDaysToDateString(dateStr, 7);
-      if (rangeStart === dateStr && rangeEnd === endDateStr) {
-        setRangeStart(null); setRangeEnd(null); return;
+    // Toggle week in/out of selectedWeeks set (both modes)
+    setSelectedWeeks(prev => {
+      const next = new Set(prev);
+      if (next.has(dateStr)) {
+        next.delete(dateStr);
+      } else {
+        next.add(dateStr);
       }
-      setRangeStart(dateStr);
-      setRangeEnd(endDateStr);
-    } else {
-      // Weekly mode: toggle week in/out of selectedWeeks set
-      setSelectedWeeks(prev => {
-        const next = new Set(prev);
-        if (next.has(dateStr)) {
-          next.delete(dateStr);
-        } else {
-          next.add(dateStr);
-        }
-        return next;
-      });
-      // Clear any range-based selection from calendar clicks
-      setRangeStart(null);
-      setRangeEnd(null);
-    }
+      return next;
+    });
+    // Clear any range-based selection from calendar clicks
+    setRangeStart(null);
+    setRangeEnd(null);
+    setMinNightsWarning(false);
+
     if (onWeekSelect) onWeekSelect(rate);
   };
 
   // ===== RANGE CHECK =====
 
   const isDateInRange = useCallback((dateStr: string): boolean => {
-    // Weekly mode with multi-select: check if date falls within any selected week
-    if (!isDailyRateMode && selectedWeeks.size > 0) {
+    // Multi-select weeks (from week buttons): check if date falls within any selected week
+    if (selectedWeeks.size > 0) {
       for (const weekStart of selectedWeeks) {
         const weekEnd = addDaysToDateString(weekStart, 6); // Sat to Fri
         if (dateStr >= weekStart && dateStr <= weekEnd) return true;
