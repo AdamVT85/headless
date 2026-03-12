@@ -607,10 +607,21 @@ export async function getVillaAvailability(villaId: string): Promise<WeeklyRate[
       return [];
     }
 
-    // Log first rate for debugging
+    // Log first rate for debugging (including daily rate field diagnosis)
     if (result.records.length > 0) {
       const firstRate = result.records[0];
       console.log(`[CRM AVAILABILITY] First rate: ${firstRate.WR_Week_Start_Date__c} - Status: ${firstRate.WR_Status__c}, Price: ${firstRate.WR_Live_Sell_This_Year__c}`);
+      console.log(`[CRM AVAILABILITY] WR_Display_Daily_rate__c raw value:`, firstRate.WR_Display_Daily_rate__c, `(type: ${typeof firstRate.WR_Display_Daily_rate__c})`);
+      console.log(`[CRM AVAILABILITY] WR_Group_of__c raw value:`, firstRate.WR_Group_of__c, `(type: ${typeof firstRate.WR_Group_of__c})`);
+
+      // Check how many rates have daily rate flag set
+      const dailyRateCount = result.records.filter((r: any) => r.WR_Display_Daily_rate__c).length;
+      const trueDailyRateCount = result.records.filter((r: any) => r.WR_Display_Daily_rate__c === true).length;
+      console.log(`[CRM AVAILABILITY] Daily rate flag: ${dailyRateCount} truthy, ${trueDailyRateCount} strict-true, out of ${result.records.length} records`);
+
+      // Log all unique values of the daily rate field
+      const uniqueValues = [...new Set(result.records.map((r: any) => JSON.stringify(r.WR_Display_Daily_rate__c)))];
+      console.log(`[CRM AVAILABILITY] Unique WR_Display_Daily_rate__c values:`, uniqueValues);
     }
 
     // Map Salesforce records to WeeklyRate interface
@@ -623,11 +634,15 @@ export async function getVillaAvailability(villaId: string): Promise<WeeklyRate[
         price: record.WR_Live_Sell_This_Year__c,
         status: record.WR_Status__c || 'Unknown',
         groupOf: record.WR_Group_of__c ?? null,
-        displayDailyRate: record.WR_Display_Daily_rate__c === true,
+        // Accept truthy values, not just strict boolean true
+        displayDailyRate: !!record.WR_Display_Daily_rate__c,
         rawDateString: record.WR_Week_Start_Date__c,
       };
     });
 
+    // Log summary of mapped data
+    const dailyRateVillas = weeklyRates.filter(r => r.displayDailyRate).length;
+    console.log(`[CRM AVAILABILITY] Mapped: ${weeklyRates.length} rates, ${dailyRateVillas} with daily rate enabled`);
     console.log(`[CRM AVAILABILITY] ========== AVAILABILITY FETCH COMPLETE ==========`);
     return weeklyRates;
   } catch (error: any) {
