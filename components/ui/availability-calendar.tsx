@@ -1,35 +1,42 @@
 /**
- * VINTAGE TRAVEL - AVAILABILITY CALENDAR (MULTI-WEEK SELECTION)
- * Visual calendar showing available and booked dates with real-time pricing
+ * VINTAGE TRAVEL - AVAILABILITY CALENDAR WITH WEEK SELECTOR
+ * Compact calendar + week selection buttons for quick booking
  * Connected to Salesforce CRM Weekly_Rate__c data
  *
- * PHASE 44: Multi-week block selection
- * - Click 1: Selects start week
- * - Click 2: Selects end week (validates range)
- * - Calculates total price by summing all weeks
+ * Features:
+ * - Compact month calendar with availability colour-coding
+ * - Week selector buttons showing date range + price per week
+ * - Click a week button or calendar date to select
+ * - Multi-week selection by clicking start then end
+ * - Booking summary with total price and CTA
  */
 
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar, Check } from 'lucide-react';
 import { cn, formatWeeklyPrice } from '@/lib/utils';
 import { WeeklyRate } from '@/types/villa';
 
 interface AvailabilityCalendarProps {
-  availability?: WeeklyRate[]; // Real-time availability from Salesforce
-  villaId: string; // Villa ID for booking URL construction
-  onWeekSelect?: (weekRate: WeeklyRate) => void; // Called when user selects an available week
-  initialStartDate?: string; // ISO date string to pre-select (e.g., "2026-06-06")
+  availability?: WeeklyRate[];
+  villaId: string;
+  onWeekSelect?: (weekRate: WeeklyRate) => void;
+  initialStartDate?: string;
   className?: string;
 }
 
-/**
- * Format date for display
- * @param date - Date to format
- * @returns Formatted string like "27 June 2026"
- */
+/** Format date like "Sat 13 Jun" */
+function formatShortDate(date: Date): string {
+  return date.toLocaleDateString('en-GB', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+  });
+}
+
+/** Format date like "27 June 2026" */
 function formatDateDisplay(date: Date): string {
   return date.toLocaleDateString('en-GB', {
     day: 'numeric',
@@ -38,39 +45,25 @@ function formatDateDisplay(date: Date): string {
   });
 }
 
-/**
- * Find the first available week in the dataset
- * "Available" means: status === 'Available' AND price is not null/zero
- */
 function findFirstAvailableWeek(availability: WeeklyRate[]): WeeklyRate | undefined {
   return availability.find(
     (rate) => rate.status === 'Available' && rate.price != null && rate.price > 0
   );
 }
 
-/**
- * Determine the initial month to display
- * Prioritizes the first available week, falls back to current month
- */
 function getInitialMonth(availability: WeeklyRate[]): Date {
   const firstAvailable = findFirstAvailableWeek(availability);
-
   if (firstAvailable) {
     const date = new Date(firstAvailable.weekStartDate);
     return new Date(date.getFullYear(), date.getMonth(), 1);
   }
-
   if (availability.length > 0) {
     const firstDate = new Date(availability[0].weekStartDate);
     return new Date(firstDate.getFullYear(), firstDate.getMonth(), 1);
   }
-
   return new Date();
 }
 
-/**
- * Format date to YYYY-MM-DD without timezone conversion
- */
 const formatDateISO = (date: Date): string => {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -86,63 +79,58 @@ export function AvailabilityCalendar({
   className,
 }: AvailabilityCalendarProps) {
   const [currentMonth, setCurrentMonth] = useState(() => getInitialMonth(availability));
-
-  // PHASE 44: Multi-week selection state (STRING-BASED)
   const [rangeStart, setRangeStart] = useState<string | null>(null);
   const [rangeEnd, setRangeEnd] = useState<string | null>(null);
 
-  // Create availability map for O(1) lookups
+  // Availability map for O(1) lookups
   const availabilityMap = useMemo(() => {
     const map = new Map<string, WeeklyRate>();
     availability.forEach(rate => {
       const key = formatDateISO(rate.weekStartDate);
       map.set(key, rate);
     });
-    console.log('[Calendar] Availability Map created with', map.size, 'entries');
     return map;
   }, [availability]);
 
-  // Helper: Get week data by date string
-  const getWeekData = (dateStr: string) => {
-    return availabilityMap.get(dateStr);
-  };
+  const getWeekData = (dateStr: string) => availabilityMap.get(dateStr);
 
-  // Helper: Add weeks to a date string
   const addWeeksToDateString = (dateStr: string, weeks: number): string => {
     const date = new Date(dateStr + 'T00:00:00');
     date.setDate(date.getDate() + (weeks * 7));
     return formatDateISO(date);
   };
 
-  // Validate range: all intermediate weeks must be available
   const isRangeValid = (startStr: string, endStr: string): boolean => {
-    console.log('[Calendar] Validating range:', startStr, 'to', endStr);
-
-    const weekDates: string[] = [];
     let current = startStr;
-
     while (current <= endStr) {
-      weekDates.push(current);
+      const week = getWeekData(current);
+      if (!week || week.status !== 'Available') return false;
       current = addWeeksToDateString(current, 1);
     }
-
-    console.log('[Calendar] Checking weeks:', weekDates);
-
-    for (const weekDate of weekDates) {
-      const week = getWeekData(weekDate);
-      console.log('[Calendar]  -', weekDate, ':', week?.status);
-
-      if (!week || week.status !== 'Available') {
-        console.log('[Calendar] ❌ Range invalid at', weekDate);
-        return false;
-      }
-    }
-
-    console.log('[Calendar] ✓ Range valid -', weekDates.length, 'weeks');
     return true;
   };
 
-  // Calculate summary for selected range
+  // Weeks available in the currently displayed month (for week selector buttons)
+  const monthWeeks = useMemo(() => {
+    const weeks: WeeklyRate[] = [];
+    const monthStart = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
+    const monthEnd = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
+
+    availability.forEach(rate => {
+      const weekDate = new Date(rate.weekStartDate);
+      // Include weeks that start in this month OR whose 7-day span overlaps this month
+      if (
+        (weekDate >= monthStart && weekDate <= monthEnd) ||
+        (weekDate < monthStart && new Date(weekDate.getTime() + 6 * 86400000) >= monthStart)
+      ) {
+        weeks.push(rate);
+      }
+    });
+
+    return weeks.sort((a, b) => a.weekStartDate.getTime() - b.weekStartDate.getTime());
+  }, [availability, currentMonth]);
+
+  // Summary for selected range
   const summary = useMemo(() => {
     if (!rangeStart) return { price: 0, weeks: 0, startDate: null, endDate: null, weekRates: [] };
 
@@ -164,44 +152,36 @@ export function AvailabilityCalendar({
 
     const startDate = new Date(rangeStart + 'T00:00:00');
     const endDate = new Date(endStr + 'T00:00:00');
-    endDate.setDate(endDate.getDate() + 7); // Checkout is 7 days after last week start
-
-    console.log('[Calendar] Summary:', { start: rangeStart, end: endStr, weeks: count, price: total });
+    endDate.setDate(endDate.getDate() + 7);
 
     return { price: total, weeks: count, startDate, endDate, weekRates };
   }, [rangeStart, rangeEnd, availabilityMap]);
 
-  // Update displayed month when availability data changes
+  // Smart jump to first available month
   useEffect(() => {
     if (availability.length > 0) {
       const firstAvailable = findFirstAvailableWeek(availability);
       if (firstAvailable) {
         const date = new Date(firstAvailable.weekStartDate);
         const targetMonth = new Date(date.getFullYear(), date.getMonth(), 1);
-
         const hasDataInCurrentMonth = availability.some((rate) => {
           const rateDate = new Date(rate.weekStartDate);
           return rateDate.getFullYear() === currentMonth.getFullYear() &&
                  rateDate.getMonth() === currentMonth.getMonth();
         });
-
         if (!hasDataInCurrentMonth) {
-          console.log(`[Calendar] 📅 Smart jump to first available month`);
           setCurrentMonth(targetMonth);
         }
       }
     }
   }, [availability]);
 
-  // Auto-select week from URL parameter
+  // Auto-select from URL parameter
   useEffect(() => {
     if (initialStartDate && availability.length > 0) {
-      console.log('[Calendar] 🎯 Auto-selecting from URL param:', initialStartDate);
-
       const matchingWeek = availability.find((rate) => {
         return formatDateISO(rate.weekStartDate) === initialStartDate;
       });
-
       if (matchingWeek) {
         const targetDate = new Date(matchingWeek.weekStartDate);
         const targetMonth = new Date(targetDate.getFullYear(), targetDate.getMonth(), 1);
@@ -212,14 +192,8 @@ export function AvailabilityCalendar({
     }
   }, [initialStartDate, availability]);
 
-  // Calendar helper functions
-  const getDaysInMonth = (date: Date) => {
-    return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
-  };
-
-  const getFirstDayOfMonth = (date: Date) => {
-    return new Date(date.getFullYear(), date.getMonth(), 1).getDay();
-  };
+  const getDaysInMonth = (date: Date) => new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+  const getFirstDayOfMonth = (date: Date) => new Date(date.getFullYear(), date.getMonth(), 1).getDay();
 
   const isPastDate = (date: Date): boolean => {
     const today = new Date();
@@ -227,95 +201,88 @@ export function AvailabilityCalendar({
     return date < today;
   };
 
-  // PHASE 44: Handle date click with range selection (ALLOWS EXTENDING)
+  // Handle date click (calendar or week button)
   const handleDateClick = (date: Date) => {
     const dateStr = formatDateISO(date);
     const clickedWeek = getWeekData(dateStr);
 
-    console.log('[Calendar] 🎯 Date clicked:', dateStr, '- Week data:', clickedWeek);
+    if (!clickedWeek || clickedWeek.status !== 'Available') return;
 
-    // Only interact with Available dates
-    if (!clickedWeek || clickedWeek.status !== 'Available') {
-      console.log('[Calendar] Ignoring click - not available');
-      return;
-    }
-
-    // SCENARIO A: No selection yet - Start new range
+    // No selection yet - start new
     if (!rangeStart) {
-      console.log('[Calendar] Starting new selection at', dateStr);
       setRangeStart(dateStr);
       setRangeEnd(null);
       return;
     }
 
-    // SCENARIO B: Start only (no end yet)
+    // Start only, no end yet
     if (rangeStart && !rangeEnd) {
-      // Toggle: Clicking on the same week deselects it
       if (dateStr === rangeStart) {
-        console.log('[Calendar] Toggling off single week selection');
         setRangeStart(null);
         setRangeEnd(null);
         return;
       }
-      // Clicking after start → Try to set end
       if (dateStr > rangeStart) {
-        console.log('[Calendar] Attempting to set end from', rangeStart, 'to', dateStr);
         if (isRangeValid(rangeStart, dateStr)) {
-          console.log('[Calendar] ✓ Setting range end');
           setRangeEnd(dateStr);
         } else {
-          console.log('[Calendar] ❌ Invalid range - resetting to new start');
           setRangeStart(dateStr);
           setRangeEnd(null);
         }
-      }
-      // Clicking before start → Reset to new start
-      else {
-        console.log('[Calendar] Clicked before start - resetting to', dateStr);
+      } else {
         setRangeStart(dateStr);
         setRangeEnd(null);
       }
       return;
     }
 
-    // SCENARIO C: Complete range (start + end) - Allow extending
+    // Complete range - allow extending or resetting
     if (rangeStart && rangeEnd) {
-      // Clicking after end → Try to extend end
       if (dateStr > rangeEnd) {
-        console.log('[Calendar] Attempting to extend range from', rangeEnd, 'to', dateStr);
         if (isRangeValid(rangeStart, dateStr)) {
-          console.log('[Calendar] ✓ Extending range end');
           setRangeEnd(dateStr);
         } else {
-          console.log('[Calendar] ❌ Invalid extension - resetting to new start');
           setRangeStart(dateStr);
           setRangeEnd(null);
         }
-      }
-      // Clicking before start → Reset to new start
-      else if (dateStr < rangeStart) {
-        console.log('[Calendar] Clicked before start - resetting to', dateStr);
+      } else if (dateStr < rangeStart) {
+        setRangeStart(dateStr);
+        setRangeEnd(null);
+      } else {
         setRangeStart(dateStr);
         setRangeEnd(null);
       }
-      // Clicking within range → Reset to new start
-      else {
-        console.log('[Calendar] Clicked within range - resetting to', dateStr);
-        setRangeStart(dateStr);
-        setRangeEnd(null);
-      }
-      return;
     }
   };
 
-  // Check if a date is in the selected range
+  // Handle week button click - select single week
+  const handleWeekButtonClick = (rate: WeeklyRate) => {
+    const dateStr = formatDateISO(rate.weekStartDate);
+
+    if (rate.status !== 'Available') return;
+
+    // If this week is already selected as a single week, deselect
+    if (rangeStart === dateStr && !rangeEnd) {
+      setRangeStart(null);
+      setRangeEnd(null);
+      return;
+    }
+
+    // Select this single week
+    setRangeStart(dateStr);
+    setRangeEnd(null);
+
+    if (onWeekSelect) {
+      onWeekSelect(rate);
+    }
+  };
+
   const isDateInRange = (dateStr: string): boolean => {
     if (!rangeStart) return false;
     const endStr = rangeEnd || rangeStart;
     return dateStr >= rangeStart && dateStr <= endStr;
   };
 
-  // Navigation
   const previousMonth = () => {
     setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1));
   };
@@ -324,196 +291,229 @@ export function AvailabilityCalendar({
     setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1));
   };
 
-  // Generate calendar days
+  // Calendar grid data
   const daysInMonth = getDaysInMonth(currentMonth);
   const firstDay = getFirstDayOfMonth(currentMonth);
-  const monthName = currentMonth.toLocaleDateString('en-US', {
-    month: 'long',
-    year: 'numeric',
-  });
+  const monthName = currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  const shortMonthName = currentMonth.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
 
-  const days = [];
-  for (let i = 0; i < firstDay; i++) {
-    days.push(null);
-  }
-  for (let day = 1; day <= daysInMonth; day++) {
-    days.push(day);
-  }
+  const days: (number | null)[] = [];
+  for (let i = 0; i < firstDay; i++) days.push(null);
+  for (let day = 1; day <= daysInMonth; day++) days.push(day);
+
+  const availableWeeksInMonth = monthWeeks.filter(w => w.status === 'Available' && !isPastDate(w.weekStartDate));
+  const bookedWeeksInMonth = monthWeeks.filter(w => w.status !== 'Available');
 
   return (
-    <div className={cn('bg-white border border-stone-200 rounded-sm p-4', className)}>
-      {/* Header */}
-      <div className="flex items-center justify-between mb-4">
+    <div className={cn('bg-white border border-stone-200 rounded-sm', className)}>
+      {/* Month Navigation Header */}
+      <div className="flex items-center justify-between px-3 py-2 border-b border-stone-100 bg-stone-50">
         <button
           onClick={previousMonth}
-          className="p-2 hover:bg-clay rounded-sm transition-colors"
+          className="p-1 hover:bg-stone-200 rounded transition-colors"
           aria-label="Previous month"
         >
-          <ChevronLeft className="h-5 w-5 text-olive" />
+          <ChevronLeft className="h-4 w-4 text-olive" />
         </button>
-
-        <h3 className="font-serif text-lg font-medium text-olive">
-          {monthName}
-        </h3>
-
+        <h3 className="font-serif text-sm font-medium text-olive">{monthName}</h3>
         <button
           onClick={nextMonth}
-          className="p-2 hover:bg-clay rounded-sm transition-colors"
+          className="p-1 hover:bg-stone-200 rounded transition-colors"
           aria-label="Next month"
         >
-          <ChevronRight className="h-5 w-5 text-olive" />
+          <ChevronRight className="h-4 w-4 text-olive" />
         </button>
       </div>
 
-      {/* Week days */}
-      <div className="grid grid-cols-7 gap-1 mb-2">
-        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
-          <div
-            key={day}
-            className="text-center text-xs font-semibold text-stone-600 py-2"
-          >
-            {day}
-          </div>
-        ))}
-      </div>
+      {/* Compact Calendar Grid */}
+      <div className="px-2 pt-1 pb-2">
+        {/* Day headers */}
+        <div className="grid grid-cols-7 mb-0.5">
+          {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => (
+            <div key={`${day}-${i}`} className="text-center text-[10px] font-semibold text-stone-400 py-0.5">
+              {day}
+            </div>
+          ))}
+        </div>
 
-      {/* Calendar grid */}
-      <div className="grid grid-cols-7 gap-1">
-        {days.map((day, index) => {
-          if (day === null) {
-            return <div key={`empty-${index}`} />;
-          }
+        {/* Date cells */}
+        <div className="grid grid-cols-7 gap-px">
+          {days.map((day, index) => {
+            if (day === null) return <div key={`empty-${index}`} className="h-6" />;
 
-          const date = new Date(
-            currentMonth.getFullYear(),
-            currentMonth.getMonth(),
-            day
-          );
-          const dateStr = formatDateISO(date);
-          const isPast = isPastDate(date);
-          const weeklyRate = getWeekData(dateStr);
+            const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
+            const dateStr = formatDateISO(date);
+            const isPast = isPastDate(date);
+            const weeklyRate = getWeekData(dateStr);
 
-          // No rate data - show as plain date
-          if (!weeklyRate) {
+            if (!weeklyRate) {
+              return (
+                <div key={day} className="h-6 flex items-center justify-center text-[11px] text-stone-300">
+                  {day}
+                </div>
+              );
+            }
+
+            const isAvailable = weeklyRate.status === 'Available' && !isPast;
+            const isBooked = weeklyRate.status === 'Booked';
+            const isInRange = isDateInRange(dateStr);
+            const isRangeStartDate = dateStr === rangeStart;
+            const isRangeEndDate = dateStr === rangeEnd;
+
             return (
-              <div
+              <button
                 key={day}
-                className="aspect-square flex items-center justify-center text-sm text-stone-400"
+                onClick={() => handleDateClick(date)}
+                disabled={!isAvailable}
+                className={cn(
+                  'h-6 flex items-center justify-center text-[11px] rounded-sm transition-all relative',
+                  isAvailable && !isInRange && 'bg-palm-50 text-palm-700 hover:bg-palm-100 cursor-pointer font-medium',
+                  isInRange && isAvailable && 'bg-palm text-white font-bold',
+                  (isRangeStartDate || isRangeEndDate) && 'ring-1 ring-olive ring-offset-1',
+                  isBooked && 'bg-stone-100 text-stone-300 cursor-not-allowed line-through',
+                  (!isAvailable && !isBooked) && 'text-stone-300 cursor-not-allowed'
+                )}
+                aria-label={`${day} ${shortMonthName}${isAvailable ? ' - Available' : isBooked ? ' - Booked' : ''}`}
               >
                 {day}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Compact Legend */}
+        <div className="flex items-center gap-3 mt-1.5 pt-1.5 border-t border-stone-100">
+          <div className="flex items-center gap-1">
+            <div className="w-2.5 h-2.5 bg-palm-50 rounded-sm border border-palm-200" />
+            <span className="text-[9px] text-stone-500">Available</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <div className="w-2.5 h-2.5 bg-palm rounded-sm" />
+            <span className="text-[9px] text-stone-500">Selected</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <div className="w-2.5 h-2.5 bg-stone-100 rounded-sm border border-stone-200" />
+            <span className="text-[9px] text-stone-500">Booked</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Week Selector Buttons */}
+      <div className="border-t border-stone-200">
+        <div className="px-3 py-2 bg-stone-50 border-b border-stone-100">
+          <h4 className="text-[10px] font-bold uppercase tracking-wider text-stone-500 flex items-center gap-1.5">
+            <Calendar className="h-3 w-3" />
+            Available weeks in {currentMonth.toLocaleDateString('en-US', { month: 'long' })}
+          </h4>
+        </div>
+
+        <div className="px-2 py-2 space-y-1 max-h-[210px] overflow-y-auto">
+          {availableWeeksInMonth.length === 0 && bookedWeeksInMonth.length === 0 && (
+            <p className="text-xs text-stone-400 text-center py-3">No availability data for this month</p>
+          )}
+
+          {availableWeeksInMonth.length === 0 && bookedWeeksInMonth.length > 0 && (
+            <p className="text-xs text-stone-400 text-center py-3">No available weeks this month</p>
+          )}
+
+          {availableWeeksInMonth.map((rate) => {
+            const startDate = new Date(rate.weekStartDate);
+            const endDate = new Date(startDate.getTime() + 6 * 86400000);
+            const dateStr = formatDateISO(startDate);
+            const isSelected = isDateInRange(dateStr);
+
+            return (
+              <button
+                key={rate.id}
+                onClick={() => handleWeekButtonClick(rate)}
+                className={cn(
+                  'w-full flex items-center justify-between px-2.5 py-2 rounded-sm border text-left transition-all group',
+                  isSelected
+                    ? 'bg-palm text-white border-palm shadow-sm'
+                    : 'bg-white border-stone-200 hover:border-palm-300 hover:bg-palm-50'
+                )}
+              >
+                <div className="flex items-center gap-2 min-w-0">
+                  {isSelected && <Check className="h-3.5 w-3.5 flex-shrink-0" />}
+                  <div className="min-w-0">
+                    <div className={cn(
+                      'text-xs font-medium leading-tight',
+                      isSelected ? 'text-white' : 'text-olive'
+                    )}>
+                      {formatShortDate(startDate)}
+                    </div>
+                    <div className={cn(
+                      'text-[10px] leading-tight',
+                      isSelected ? 'text-white/80' : 'text-stone-400'
+                    )}>
+                      to {formatShortDate(endDate)}
+                    </div>
+                  </div>
+                </div>
+                <div className={cn(
+                  'text-xs font-bold flex-shrink-0 ml-2',
+                  isSelected ? 'text-white' : 'text-terracotta'
+                )}>
+                  {formatWeeklyPrice(rate.price)}
+                </div>
+              </button>
+            );
+          })}
+
+          {/* Show booked weeks greyed out */}
+          {bookedWeeksInMonth.map((rate) => {
+            const startDate = new Date(rate.weekStartDate);
+            const endDate = new Date(startDate.getTime() + 6 * 86400000);
+
+            return (
+              <div
+                key={rate.id}
+                className="w-full flex items-center justify-between px-2.5 py-2 rounded-sm border border-stone-100 bg-stone-50 opacity-50"
+              >
+                <div>
+                  <div className="text-xs text-stone-400 leading-tight line-through">
+                    {formatShortDate(startDate)}
+                  </div>
+                  <div className="text-[10px] text-stone-300 leading-tight line-through">
+                    to {formatShortDate(endDate)}
+                  </div>
+                </div>
+                <span className="text-[10px] font-medium text-stone-400">Booked</span>
               </div>
             );
-          }
-
-          const isAvailable = weeklyRate.status === 'Available' && !isPast;
-          const isBooked = weeklyRate.status === 'Booked';
-          const isInRange = isDateInRange(dateStr);
-          const isRangeStart = dateStr === rangeStart;
-          const isRangeEnd = dateStr === rangeEnd;
-
-          return (
-            <button
-              key={day}
-              onClick={() => handleDateClick(date)}
-              disabled={!isAvailable}
-              className={cn(
-                'aspect-square flex flex-col items-center justify-center text-xs rounded-sm transition-all border-2',
-                // Available dates - clickable
-                isAvailable && !isInRange && 'bg-palm-50 border-palm-200 hover:bg-palm-100 hover:border-palm cursor-pointer text-palm-700',
-                // Selected range
-                isInRange && isAvailable && 'bg-palm text-white border-palm',
-                // Range start/end emphasis
-                (isRangeStart || isRangeEnd) && 'ring-2 ring-olive',
-                // Booked dates
-                isBooked && 'bg-stone-100 border-stone-200 text-stone-400 cursor-not-allowed',
-                // Past or no data
-                (!weeklyRate || isPast) && 'bg-stone-50 border-stone-200 text-stone-400 cursor-not-allowed'
-              )}
-              aria-label={`${monthName} ${day}${isAvailable ? ' - Available' : isBooked ? ' - Booked' : ' - Unavailable'}`}
-            >
-              <span className={cn('font-semibold', isBooked && 'line-through')}>
-                {day}
-              </span>
-              {weeklyRate && (
-                <span className={cn('text-[10px] mt-0.5', isBooked && 'line-through')}>
-                  {formatWeeklyPrice(weeklyRate.price)}
-                </span>
-              )}
-            </button>
-          );
-        })}
+          })}
+        </div>
       </div>
 
-      {/* Legend */}
-      <div className="mt-4 pt-4 border-t border-stone-200 space-y-2 text-xs">
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-palm-50 rounded-sm border-2 border-palm-200" />
-          <span className="text-stone-600">Available</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-palm rounded-sm border-2 border-palm" />
-          <span className="text-stone-600">Selected Range</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-stone-100 rounded-sm border-2 border-stone-200 relative">
-            <span className="absolute inset-0 flex items-center justify-center">
-              <span className="h-px w-3/4 bg-stone-400" />
+      {/* Booking Summary */}
+      {rangeStart && summary.startDate && (
+        <div className="border-t border-stone-200 px-3 py-3 bg-stone-50 space-y-2">
+          <div className="flex items-baseline justify-between">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-stone-500">
+              {summary.weeks} week{summary.weeks > 1 ? 's' : ''} selected
+            </span>
+            <span className="font-serif text-lg text-terracotta font-medium">
+              {summary.price > 0
+                ? `£${summary.price.toLocaleString('en-GB')}`
+                : 'Price on Request'}
             </span>
           </div>
-          <span className="text-stone-600">Booked</span>
-        </div>
-      </div>
 
-      {/* Booking Summary Panel - PHASE 44: Multi-week */}
-      {rangeStart && summary.startDate && (
-        <div className="mt-6 p-4 bg-stone-50 border border-stone-200 rounded-sm space-y-3">
-          <h4 className="font-serif text-lg font-medium text-olive">
-            Booking Summary
-          </h4>
-
-          {/* Week count */}
-          <div className="text-sm text-stone-600">
-            <span className="font-semibold text-olive">{summary.weeks}</span> week{summary.weeks > 1 ? 's' : ''} selected
+          <div className="flex justify-between text-[11px] text-stone-500">
+            <span>{formatDateDisplay(summary.startDate)}</span>
+            <span className="text-stone-300 px-1">&rarr;</span>
+            <span>{summary.endDate ? formatDateDisplay(summary.endDate) : '-'}</span>
           </div>
 
-          {/* Check-in and Check-out Dates */}
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm">
-              <span className="text-stone-600">Check-in:</span>
-              <span className="font-medium text-olive">
-                {formatDateDisplay(summary.startDate)}
-              </span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-stone-600">Check-out:</span>
-              <span className="font-medium text-olive">
-                {summary.endDate ? formatDateDisplay(summary.endDate) : '-'}
-              </span>
-            </div>
-          </div>
-
-          {/* Price Display */}
-          <div className="pt-3 border-t border-stone-300">
-            <div className="flex justify-between items-baseline">
-              <span className="text-sm text-stone-600">Total:</span>
-              <span className="font-serif text-2xl text-terracotta">
-                {summary.price > 0
-                  ? `£${summary.price.toLocaleString('en-GB')}`
-                  : 'Price on Request'}
-              </span>
-            </div>
-          </div>
-
-          {/* Call to Action Button */}
           <Link
             href={`/book/${villaId}?startDate=${rangeStart}${rangeEnd ? `&endDate=${rangeEnd}` : ''}`}
-            className="block w-full bg-terracotta hover:bg-terracotta/90 text-white text-center py-3 rounded-sm transition-colors font-semibold mt-4"
+            className="block w-full bg-terracotta hover:bg-terracotta/90 text-white text-center py-2.5 rounded-sm transition-colors font-semibold text-sm mt-1"
           >
-            {summary.price > 0 ? 'Start Booking' : 'Enquire Now'}
+            {summary.price > 0 ? 'Book Now' : 'Enquire Now'}
           </Link>
 
-          <p className="text-xs text-stone-500 text-center mt-2">
-            {summary.weeks}-week stay • Saturday to Saturday
+          <p className="text-[10px] text-stone-400 text-center">
+            Saturday to Saturday
           </p>
         </div>
       )}
