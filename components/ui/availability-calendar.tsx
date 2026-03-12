@@ -613,6 +613,20 @@ export function AvailabilityCalendar({
     }
   }, [rangeStart, rangeEnd, isDailyRateMode, selectedWeeks]);
 
+  /** Is this week selected via the week buttons (or exact calendar match)? */
+  const isWeekSelected = useCallback((weekStartStr: string): boolean => {
+    // Directly toggled via week button
+    if (selectedWeeks.has(weekStartStr)) return true;
+    // Exact calendar range match: rangeStart = week start, rangeEnd = week start + 7 (checkout)
+    if (rangeStart === weekStartStr) {
+      const weekEndStr = addDaysToDateString(weekStartStr, 7);
+      if (rangeEnd === weekEndStr) return true;
+      // Weekly (non-daily) mode: single week selected when rangeEnd is null
+      if (!isDailyRateMode && !rangeEnd) return true;
+    }
+    return false;
+  }, [selectedWeeks, rangeStart, rangeEnd, isDailyRateMode]);
+
   const previousMonth = () => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1));
   const nextMonth = () => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1));
 
@@ -923,7 +937,7 @@ export function AvailabilityCalendar({
             const startDate = new Date(rate.weekStartDate);
             const endDate = new Date(startDate.getTime() + 6 * 86400000);
             const dateStr = formatDateISO(startDate);
-            const isSelected = isDateInRange(dateStr);
+            const isSelected = isWeekSelected(dateStr);
 
             const weekBreakdown = rate.price
               ? (isDailyRateMode
