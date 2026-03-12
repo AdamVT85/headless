@@ -81,7 +81,7 @@ export interface SalesforceWeeklyRateRecord {
   WR_Live_Sell_This_Year__c: number | null;
   WR_Status__c: string;
   WR_Group_of__c: number | null; // Max group size this rate applies to
-  WR_Display_Daily_rate__c: boolean | null; // When true, enables flexible daily bookings
+  WR_Display_Daily_Rate__c: boolean | null; // When true, enables flexible daily bookings
 }
 
 /**
@@ -591,7 +591,7 @@ export async function getVillaAvailability(villaId: string): Promise<WeeklyRate[
         WR_Live_Sell_This_Year__c,
         WR_Status__c,
         WR_Group_of__c,
-        WR_Display_Daily_rate__c
+        WR_Display_Daily_Rate__c
       FROM Weekly_Rate__c
       WHERE WR_Contract__r.CON_Property__c = '${villaId}'
         AND WR_Week_Start_Date__c >= ${todayStr}
@@ -611,17 +611,17 @@ export async function getVillaAvailability(villaId: string): Promise<WeeklyRate[
     if (result.records.length > 0) {
       const firstRate = result.records[0];
       console.log(`[CRM AVAILABILITY] First rate: ${firstRate.WR_Week_Start_Date__c} - Status: ${firstRate.WR_Status__c}, Price: ${firstRate.WR_Live_Sell_This_Year__c}`);
-      console.log(`[CRM AVAILABILITY] WR_Display_Daily_rate__c raw value:`, firstRate.WR_Display_Daily_rate__c, `(type: ${typeof firstRate.WR_Display_Daily_rate__c})`);
+      console.log(`[CRM AVAILABILITY] WR_Display_Daily_Rate__c raw value:`, firstRate.WR_Display_Daily_Rate__c, `(type: ${typeof firstRate.WR_Display_Daily_Rate__c})`);
       console.log(`[CRM AVAILABILITY] WR_Group_of__c raw value:`, firstRate.WR_Group_of__c, `(type: ${typeof firstRate.WR_Group_of__c})`);
 
       // Check how many rates have daily rate flag set
-      const dailyRateCount = result.records.filter((r: any) => r.WR_Display_Daily_rate__c).length;
-      const trueDailyRateCount = result.records.filter((r: any) => r.WR_Display_Daily_rate__c === true).length;
+      const dailyRateCount = result.records.filter((r: any) => r.WR_Display_Daily_Rate__c).length;
+      const trueDailyRateCount = result.records.filter((r: any) => r.WR_Display_Daily_Rate__c === true).length;
       console.log(`[CRM AVAILABILITY] Daily rate flag: ${dailyRateCount} truthy, ${trueDailyRateCount} strict-true, out of ${result.records.length} records`);
 
       // Log all unique values of the daily rate field
-      const uniqueValues = [...new Set(result.records.map((r: any) => JSON.stringify(r.WR_Display_Daily_rate__c)))];
-      console.log(`[CRM AVAILABILITY] Unique WR_Display_Daily_rate__c values:`, uniqueValues);
+      const uniqueValues = [...new Set(result.records.map((r: any) => JSON.stringify(r.WR_Display_Daily_Rate__c)))];
+      console.log(`[CRM AVAILABILITY] Unique WR_Display_Daily_Rate__c values:`, uniqueValues);
     }
 
     // Map Salesforce records to WeeklyRate interface
@@ -635,7 +635,7 @@ export async function getVillaAvailability(villaId: string): Promise<WeeklyRate[
         status: record.WR_Status__c || 'Unknown',
         groupOf: record.WR_Group_of__c ?? null,
         // Accept truthy values, not just strict boolean true
-        displayDailyRate: !!record.WR_Display_Daily_rate__c,
+        displayDailyRate: !!record.WR_Display_Daily_Rate__c,
         rawDateString: record.WR_Week_Start_Date__c,
       };
     });

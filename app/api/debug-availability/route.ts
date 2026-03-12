@@ -1,17 +1,17 @@
 /**
- * DEBUG ENDPOINT: Check raw availability data for a villa
- * Usage: /api/debug-availability?villaId=XXXX
- * or:    /api/debug-availability?slug=luna
+ * DEBUG ENDPOINT: Check raw Salesforce availability data for a villa
+ * Usage: /api/debug-availability?slug=luna
  *
- * Shows the raw Salesforce data including WR_Display_Daily_rate__c values
- * to diagnose why daily-rate mode may not be activating.
- *
+ * Returns RAW Salesforce record keys and values to diagnose field name casing issues.
  * REMOVE THIS ENDPOINT before production launch.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getVillaAvailability } from '@/lib/crm-client';
 import { getVillaBySlug } from '@/lib/villa-data-source';
+import jsforce from 'jsforce';
+import { format } from 'date-fns';
+
+const { SF_USERNAME, SF_PASSWORD, SF_TOKEN, SF_LOGIN_URL } = process.env;
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -25,7 +25,6 @@ export async function GET(request: NextRequest) {
   try {
     let resolvedVillaId = villaId;
 
-    // Resolve slug to villa ID if needed
     if (slug && !villaId) {
       const villa = await getVillaBySlug(slug);
       if (!villa) {
@@ -34,38 +33,69 @@ export async function GET(request: NextRequest) {
       resolvedVillaId = villa.id;
     }
 
-    const availability = await getVillaAvailability(resolvedVillaId!);
+    // Connect directly to Salesforce for raw data
+    if (!SF_USERNAME || !SF_PASSWORD || !SF_TOKEN) {
+      return NextResponse.json({ error: 'Missing Salesforce credentials' }, { status: 500 });
+    }
 
-    // Analyse daily rate field
-    const dailyRateTrue = availability.filter(r => r.displayDailyRate === true);
-    const dailyRateFalse = availability.filter(r => r.displayDailyRate === false);
-    const anyDailyRate = availability.some(r => r.displayDailyRate);
+    const conn = new jsforce.Connection({
+      loginUrl: SF_LOGIN_URL || 'https://login.salesforce.com',
+    });
+    await conn.login(SF_USERNAME, SF_PASSWORD + SF_TOKEN);
+
+    const todayStr = format(new Date(), 'yyyy-MM-dd');
+
+    const result = await conn.query(
+      `SELECT
+        Id,
+        WR_Week_Start_Date__c,
+        WR_Live_Sell_This_Year__c,
+        WR_Status__c,
+        WR_Group_of__c,
+        WR_Display_Daily_Rate__c
+      FROM Weekly_Rate__c
+      WHERE WR_Contract__r.CON_Property__c = '${resolvedVillaId}'
+        AND WR_Week_Start_Date__c >= ${todayStr}
+      ORDER BY WR_Week_Start_Date__c ASC
+      LIMIT 5`
+    );
+
+    // Get raw record keys to diagnose casing
+    const firstRecord = result.records[0] as Record<string, unknown> | undefined;
+    const allKeys = firstRecord ? Object.keys(firstRecord) : [];
+
+    // Find any key containing "daily" (case-insensitive)
+    const dailyKeys = allKeys.filter(k => k.toLowerCase().includes('daily'));
+
+    // Find any key containing "display" (case-insensitive)
+    const displayKeys = allKeys.filter(k => k.toLowerCase().includes('display'));
 
     return NextResponse.json({
       villaId: resolvedVillaId,
       slug: slug || null,
-      totalRates: availability.length,
-      summary: {
-        dailyRateEnabled: anyDailyRate,
-        dailyRateTrueCount: dailyRateTrue.length,
-        dailyRateFalseCount: dailyRateFalse.length,
-        uniqueStatuses: [...new Set(availability.map(r => r.status))],
-        uniqueGroupSizes: [...new Set(availability.map(r => r.groupOf))].sort(),
+      totalRecords: result.totalSize,
+      diagnosis: {
+        allFieldKeys: allKeys,
+        keysContainingDaily: dailyKeys,
+        keysContainingDisplay: displayKeys,
+        exactFieldWeExpect: 'WR_Display_Daily_Rate__c',
+        fieldExists: allKeys.includes('WR_Display_Daily_Rate__c'),
+        // Try common casing variants
+        casingVariants: {
+          'WR_Display_Daily_Rate__c': firstRecord?.['WR_Display_Daily_Rate__c'],
+          'WR_Display_Daily_Rate__c': firstRecord?.['WR_Display_Daily_Rate__c'],
+          'WR_Display_daily_rate__c': firstRecord?.['WR_Display_daily_rate__c'],
+          'WR_Display_Daily_Rate__c (type)': typeof firstRecord?.['WR_Display_Daily_Rate__c'],
+          'WR_Display_Daily_Rate__c (type)': typeof firstRecord?.['WR_Display_Daily_Rate__c'],
+        },
       },
-      // Show first 5 rates with all fields for diagnosis
-      sampleRates: availability.slice(0, 5).map(r => ({
-        id: r.id,
-        weekStartDate: r.rawDateString,
-        price: r.price,
-        status: r.status,
-        groupOf: r.groupOf,
-        displayDailyRate: r.displayDailyRate,
-      })),
+      // Raw first 3 records with all fields as Salesforce returns them
+      rawRecords: result.records.slice(0, 3),
     });
   } catch (error: any) {
     return NextResponse.json({
       error: error.message,
-      hint: 'Check server logs for detailed CRM debug output',
+      stack: error.stack?.split('\n').slice(0, 5),
     }, { status: 500 });
   }
 }

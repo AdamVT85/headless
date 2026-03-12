@@ -4,7 +4,7 @@
  *
  * Two modes:
  * 1. WEEKLY MODE (default): Saturday-to-Saturday week blocks
- * 2. DAILY MODE (WR_Display_Daily_rate__c = true): Flexible day-by-day booking
+ * 2. DAILY MODE (WR_Display_Daily_Rate__c = true): Flexible day-by-day booking
  *    - Every day within available weeks is clickable
  *    - Saturdays highlighted as normal changeover days
  *    - Supports irregular stays (e.g. 9 nights)
