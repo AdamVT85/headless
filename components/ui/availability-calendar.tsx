@@ -499,16 +499,18 @@ export function AvailabilityCalendar({
     if (rangeStart && !rangeEnd) {
       if (dateStr === rangeStart) { setRangeStart(null); setRangeEnd(null); setMinNightsWarning(false); return; }
       if (dateStr > rangeStart) {
-        const nights = countNights(rangeStart, dateStr);
+        // Clicked date = last night of stay, checkout = day after
+        const checkoutStr = addDaysToDateString(dateStr, 1);
+        const nights = countNights(rangeStart, checkoutStr);
         // Enforce minimum nights
         if (nights < MIN_NIGHTS_DAILY_MODE) {
           setMinNightsWarning(true);
           return;
         }
         setMinNightsWarning(false);
-        // Validate all days from check-in to day before checkout are available
-        if (isDailyRangeValid(rangeStart, addDaysToDateString(dateStr, -1))) {
-          setRangeEnd(dateStr); // dateStr = checkout date
+        // Validate all days from check-in through the clicked date are available
+        if (isDailyRangeValid(rangeStart, dateStr)) {
+          setRangeEnd(checkoutStr); // checkout = day after last night
         } else {
           setRangeStart(dateStr); setRangeEnd(null);
         }
