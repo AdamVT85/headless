@@ -83,9 +83,6 @@ export async function GET(request: NextRequest) {
         // Try common casing variants
         casingVariants: {
           'WR_Display_Daily_Rate__c': firstRecord?.['WR_Display_Daily_Rate__c'],
-          'WR_Display_Daily_Rate__c': firstRecord?.['WR_Display_Daily_Rate__c'],
-          'WR_Display_daily_rate__c': firstRecord?.['WR_Display_daily_rate__c'],
-          'WR_Display_Daily_Rate__c (type)': typeof firstRecord?.['WR_Display_Daily_Rate__c'],
           'WR_Display_Daily_Rate__c (type)': typeof firstRecord?.['WR_Display_Daily_Rate__c'],
         },
       },
